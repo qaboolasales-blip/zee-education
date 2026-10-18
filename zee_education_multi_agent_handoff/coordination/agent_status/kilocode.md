@@ -1,0 +1,27 @@
+# Kilocode Status
+
+- Status: Batch A complete (with blockers)
+- Completed task IDs: K-00.1, K-00.2, K-01.1, K-01.2, K-01.3, K-01.4, K-02.1, K-02.2, K-02.3, K-02.4, K-03.1, K-03.2, K-03.3, K-03.4, K-04.1, K-04.2, K-04.3
+- Changed files:
+  - `backend/docs/environment-audit.md` (new)
+  - `backend/docs/control-plane-data-boundary.md` (new)
+  - `backend/docs/migration-plan.md` (new)
+  - `backend/docs/api/openapi-v0.md` (new)
+  - `backend/.gitignore` (rewritten — Zee Education secrets protection)
+  - `backend/README.md` (rewritten — Laragon start/test commands)
+  - `backend/app/Database/Migrations/2026-10-18_000001_create_schools_table.php` (new)
+  - `backend/app/Database/Migrations/2026-10-18_000002_create_school_domains_table.php` (new)
+  - `backend/app/Database/Migrations/2026-10-18_000003_create_provisioning_jobs_table.php` (new)
+  - `backend/app/Database/Migrations/2026-10-18_000004_create_platform_audit_events_table.php` (new)
+  - `backend/tests/Feature/MigrationSmokeTest.php` (new)
+- Tests/checks run:
+  - PHP syntax lint: all 55 backend PHP files pass (0 syntax errors)
+  - PHPUnit 27 tests, 107 assertions, 0 errors, 1 warning (no code coverage driver)
+  - Command: `php -d extension=php_intl.dll -d extension=php_mysqli.dll vendor/bin/phpunit -c phpunit.dist.xml`
+  - Reference UI SHA-256 hashes: all 3 MATCH (unchanged)
+- Blockers:
+  - `intl` extension disabled in php.ini (DLL present, commented out)
+  - `mysqli` extension disabled in php.ini (DLL present, commented out)
+  - MySQL/MariaDB server not running — live migrations cannot execute
+  - Composer not available as global command
+- Next safe microtask: Batch A is complete. Batch B (B-K-01 through B-K-08) must not begin until explicitly assigned.

@@ -1,0 +1,23 @@
+{
+  "lockVersion": "1.0.0",
+  "source": "agents/opencode/shared_readonly/REFERENCE_UI_LOCK.md",
+  "algorithm": "sha256",
+  "note": "Read-only manifest of approved pixel-locked reference UI. Never edit a reference file to make this manifest pass.",
+  "files": [
+    {
+      "name": "Zee Education — Mobile App Preview.html",
+      "bytes": 31169,
+      "sha256": "deec1fceb15cdf4af44d174a65ff27261b1ad87d7418087f3783fa8bbbb73d9f"
+    },
+    {
+      "name": "Zee Education — School Dashboard.html",
+      "bytes": 34230,
+      "sha256": "56d82bef4b1ef5ede1811fc12da0f643b1db0c328926b24de4f10f5d78a6948d"
+    },
+    {
+      "name": "Zee Education — Super Admin.html",
+      "bytes": 32473,
+      "sha256": "df876fbc699389c5e1128d99678ead93c3ac1e4340a4a805948e8d5ba606cb30"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+﻿## Honest status line
+
+> **No mark can be entered and no result can be published, because nothing exists
+> to do it with.** Batch H delivered the highest-consequence logic in the project so
+> far: a three-stage lifecycle read directly from the locked UI, a transition machine
+> where only the teacher may submit for review and only the School Admin may
+> publish, review cannot be skipped and a published result cannot be un-published â€”
+> and a publication gate that makes it structurally impossible for an unpublished
+> result to reach a parent or student view, even if the server sent one.
+>
+> Two real bugs were caught. The first was a genuine design error: I modelled
+> transition authority as *stage ownership*, which meant **a teacher could not
+> submit their own draft for review** â€” the primary teacher workflow was impossible.
+> The second was a guard that searched for `"1 Teacher draft"` when the reference
+> renders `1<br>Teacher draft`.
+>
+> The restraint worth carrying forward is `gradeFor()`. The locked UI displays `A`
+> and `A+`, and writing a plausible `>= 90 = A` band would have been four lines that
+> made the screen render perfectly. No grading policy is published, so it returns
+> unknown â€” because that band would decide whether a real child passed.
+
+## Next safe microtask
+
+**I-O-01** (Batch I â€” Manual Fees, Receipts, Discounts & Fines), per
+`OPENCODE_ALL_BATCHES.md`.
+
+It is **not startable yet**. Batch I needs:
+
+1. KiloCode to implement the per-school fee, receipt, discount and fine schema plus
+   contracts â€” `control-plane-data-boundary.md` lists "Fee records, receipts,
+   discounts, fines" as school-local data, and none exists; and
+2. Cline's UI-lock harness approval, plus owner review/merge of Batches Bâ€“H.
+
+Two things carry forward that I will build into Batch I as pure logic, as they were
+in F and G:
+
+- **Money handling must reuse the existing PKR formatters.** The locked strings are
+  `PKR 1.08M`, `PKR 296K`, `PKR 12.5k`, `PKR 12,500`, and I must keep the single
+  documented K-casing divergence rather than silently reconciling it (OI-3 / FAT-03).
+- **I-O-05 requires confirming there is no payment gateway UI or checkout logic.**
+  That is a whole-tree constraint in the same shape as G-O-05, so I can enforce it
+  with a scan: no gateway host, no checkout/tokenisation surface, no card or bank
+  field. UNIVERSAL_RULES excludes online payment gateways in V1, and the reference
+  already says so in its own locked copy ("Online gateway V1 mein nahin").
+
+Until then the safe non-binding work is: keep the seventeen drift and
+anti-fabrication guards green and re-run `npm run check`. I have **not** started
+Batch I.

@@ -1,0 +1,22 @@
+{
+  "name": "zee-education-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Zee Education UI-safe frontend adapter layer. Non-visual only: no HTML, CSS, SVG or runtime page may exist in this package.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "exports": {
+    "./core/api": "./core/api/index.js",
+    "./core/format": "./core/format/index.js"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "test:ui-lock": "node tools/verify-reference-ui.mjs",
+    "check": "npm run test:ui-lock && npm test"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
