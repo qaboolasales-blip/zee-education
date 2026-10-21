@@ -88,9 +88,11 @@ the same smoke is LB-2 there (open, pre-pilot).
    roles signed in on production; approved-surface landings and role denials verified
    (table above); licence Active; student create proven end-to-end (API + DB + cleanup).
    Attendance/results/report exports: attendance write is defect LB-2 (open, unbound
-   endpoint); licence rows T-25..T-27 executed live 2026-10-21 (G8 GO, record in
-   `quality/docs/tenant-isolation-test-matrix.md` §6); G6/G7 role/isolation matrices
-   still pending row-by-row run.
+   endpoint); fee-invoice write is defect LB-4 (open, same academic-FK family);
+   licence rows T-25..T-27 executed live 2026-10-21 (G8 GO, record in
+   `quality/docs/tenant-isolation-test-matrix.md` §6); **G6 role matrix executed live
+   2026-10-21 against build 11 — GO** (record in `quality/docs/role-permission-matrix.md`
+   §6); G7 isolation matrix T-1..T-24 still pending row-by-row run.
 2. ~~No Git tag exists.~~ **Closed 2026-10-21:** annotated tag `v0.1.0-pre` (commit
    `b1267df…`) pushed; build 9 rebuilt from it; build 10 cut2 commits later
    (`git describe` = `v0.1.0-pre-2-g77739b6`, manifest records `git_tag: null`, zero
@@ -100,9 +102,10 @@ the same smoke is LB-2 there (open, pre-pilot).
    in this project's history also still needs revoke/rotate.)
 4. No independent third-party Hostinger buyer account test has been done.
 5. FINAL_RELEASE_STATUS in backend/FINAL_RELEASE_AND_PILOT_REPORT.md is still BLOCKED
-   (G3b pixel gate, G6/G7 live matrices, G9/G10 owner sign-offs; G8 cleared 2026-10-21).
-6. Defect LB-2 (attendance write 500) is open - pre-pilot fix, needs academic-structure
-   scope resolution (session/class/actor), not seedable fake data.
+   (G3b pixel gate, G7 live matrix, G9/G10 owner sign-offs; G6 + G8 cleared 2026-10-21).
+6. Defects LB-2 (attendance write 500) and LB-4 (fee-invoice write 500) are open -
+   pre-pilot fixes, both need academic-structure scope resolution (session/class/actor,
+   invoice due date), not seedable fake data.
 
 ## NEW THIS PASS
 

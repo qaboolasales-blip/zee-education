@@ -19,7 +19,7 @@ Each finding names the file+setting (verified by reading) and marks runtime enfo
 - **Verified:** `Filters.php` `$filters = []`, `$globals` has no auth filter, no auth alias defined; `Routes.php` has no auth routes; Controllers are only Health/Home/Setup.
 - **Impact:** There is currently **zero** server-side authz. This is expected pre-implementation, not a regression.
 - **Planned check:** once auth ships, assert every non-PUBLIC route is bound to an auth+role filter (B-C-01/B-C-03). Ties to `release-gates.md` G6.
-- **2026-10-20 update:** this finding is **obsolete** — Shield `session`/`role:*`/`superadmin`/`license` filters now guard every authenticated route with negative tests in the suite (see G6 in `release-gates.md`); the 2026-10-20 runtime round confirmed real logins + authed 200s/401s. Still open: the full live role matrix against owner-approved accounts (G6, never waivable).
+- **2026-10-20 update:** this finding is **obsolete** — Shield `session`/`role:*`/`superadmin`/`license` filters now guard every authenticated route with negative tests in the suite (see G6 in `release-gates.md`); the 2026-10-20 runtime round confirmed real logins + authed 200s/401s. ~~Still open: the full live role matrix against owner-approved accounts (G6, never waivable).~~ **Closed 2026-10-21:** the live role matrix executed row-by-row against build 11 with the five approved accounts + an absent-role account (JSON 403 denials, forged IDs ignored, registration disabled; three findings fixed in build 11) — gate **G6 GO**, record `role-permission-matrix.md` §6.
 
 ### SC-2 — CSRF configured but NOT enabled; token randomization off *(as of the 2026-10-17 review — global filter since ENABLED 2026-10-20, see updates below; `tokenRandomize` still off)*
 - **Verified:** `Security.php` sets `csrfProtection='cookie'`, `regenerate=true`, `expires=7200`, `redirect=production-only`, **`tokenRandomize=false`**. But `Filters.php` `$globals.before` has `'csrf'` **commented out**, so CSRF is not applied globally.
@@ -63,7 +63,7 @@ Each finding names the file+setting (verified by reading) and marks runtime enfo
 
 | Control | Config present? | Enforced at runtime today? | Gap / action |
 |---------|-----------------|---------------------------|--------------|
-| AuthN/AuthZ filter | Yes (`session`/`role:*`/`superadmin`/`license`) | **Yes** (route-bound + negative tests; 2026-10-20) | Live role matrix on owner accounts (G6) |
+| AuthN/AuthZ filter | Yes (`session`/`role:*`/`superadmin`/`license`) | **Yes** (route-bound + negative tests; 2026-10-20) + **live role matrix on owner accounts executed 2026-10-21 (G6 GO)** | **Closed (G6)** |
 | CSRF | Yes (session, regen) | **Yes — global** — `'csrf'` in `$globals['before']` except billing, which keeps `api_csrf` (JSON contract); probe `I1`/`I2`/`I3`, 39/39 (2026-10-20 round 2) | `tokenRandomize=true` still open (SC-2 residual) |
 | Secure headers | Alias only → **enabled in `$globals['after']`** | **Yes** — 5 headers emitted + feature tests (2026-10-20) | Keep (SC-3 closed) |
 | Cookie `HttpOnly`/`SameSite` | Yes | Yes (framework default) + live-observed (SC-4) | Keep (SC-4) |
@@ -84,5 +84,5 @@ This was a **point-in-time static review**. The runtime re-review ran on 2026-10
 - [x] No `Access-Control-Allow-Origin: *` on any authenticated route (SC-7) — deny-by-default + explicit allowlist + preflight matrix executed; single-origin echo quirk recorded. *(2026-10-20, RT-1/RT-2)*
 - [x] Session id regenerated on login (SF-01) and pre-login id rejected after login (SF-02). *(live-verified 2026-10-20 — probe `H1`/`H2`, `security-runtime-review.md` RT-8; Shield regenerates with destroy outside phpunit's `testing` environment. SF-04 auto-rotation destroy still open as MB-2)*
 
-Still **open hardening actions**: SC-2 residual now narrowed to **`tokenRandomize` only** (global + login CSRF closed in the 2026-10-20 round-2 / build 5 run) and SC-6 (CSP, needs per-view nonces). Neither makes a runtime claim; both are recorded as deliberate shipped limitations. (SC-5 closed 2026-10-20 — see above.) Ties to `ops/release-gates.md` G5 (runtime asserts now executed) / G6.
+Still **open hardening actions**: SC-2 residual now narrowed to **`tokenRandomize` only** (global + login CSRF closed in the 2026-10-20 round-2 / build 5 run) and SC-6 (CSP, needs per-view nonces). Neither makes a runtime claim; both are recorded as deliberate shipped limitations. (SC-5 closed 2026-10-20 — see above.) Ties to `ops/release-gates.md` G5 (runtime asserts now executed); **G6 closed 2026-10-21** (live role matrix, build 11).
 

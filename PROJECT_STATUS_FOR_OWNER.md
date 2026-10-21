@@ -33,21 +33,24 @@ password is still unrotated.
   behavioural tests (`ProvisioningIdempotencyTest`) covering DB rejection of
   duplicate keys, duplicate school-code refusal and the completed-school re-provision
   no-op.
-- Package (build 10, 2026-10-21): first shipped-code change since build 5 — the
-  root-route post-login redirect-loop fix found by the live smoke (commit `77739b6…`,
-  `git describe` = `v0.1.0-pre-2-g77739b6`): `build-package.ps1`
-  verifier **35 checks, 0 failures, 0
+- Package (**build 11, 2026-10-21 — current live artefact**): the G6 role-matrix fixes —
+  JSON 401/403 denials on API paths (`RoleFilter`), staff/fees routes tightened to
+  School-Admin-only, Super Admin school-link exemption for invite minting, public
+  registration disabled (commit `c9b7685…`, `git describe` = `v0.1.0-pre-5-gc9b7685`,
+  backend suite **179/715** incl. the new `RoleFilterApiDenialTest`):
+  `build-package.ps1` verifier **35 checks, 0 failures, 0
   warnings** on the build tree and again inside the extracted ZIP;
-  ZIP SHA-256 `c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`
-  (4,107,754 bytes; `package-manifest.json` records commit `77739b6…` + `git_tag: null`,
-  with 0 "no Git tag" claims in any shipped text; supersedes build 9
-  (`46f5a487…`, kept as `*.zip.bak-20261021-094201`) and
-  builds 8/7/6 (`b249281c…` / `11fb712e…` / `d1f3df4f…`, kept as `*.zip.bak-20261021-075532` /
-  `-20261020-183756` / `-093116`); build 5 `b0cd78a6…` as `*.zip.bak-20261020-085852`;
-  builds 4/3/2/1 kept as `*.zip.bak-20261020-083633` / `-052205` / `-025056` /
+  ZIP SHA-256 `f4e9e1dab40775fe90e0329b201a79dfa46c732e75d0afbd87ae448d89bf15b2`
+  (4,108,746 bytes; `package-manifest.json` records commit `c9b7685…` + `git_tag: null`;
+  supersedes build 10 (`c31ad281…`, commit `77739b6` — the root-route post-login
+  redirect-loop fix), whose tree is kept on the host as `Zee_Education_v0.1.0_b10` for
+  instant rollback; build 9 (`46f5a487…`) as `*.zip.bak-20261021-094201`;
+  builds 8/7/6 (`b249281c…` / `11fb712e…` / `d1f3df4f…`) as `*.zip.bak-20261021-075532` /
+  `-20261020-183756` / `-093116`; build 5 `b0cd78a6…` as `*.zip.bak-20261020-085852`;
+  builds 4/3/2/1 as `*.zip.bak-20261020-083633` / `-052205` / `-025056` /
   `*.zip.bak-20261019-224837`).
   No `.env`, no private keys, no hosting account id, no pilot test data shipped.
-  Suites before build: backend **169/687** (from fresh empty CI-harness DBs), frontend 816/816.
+  Suites: backend **179/715** (from fresh empty CI-harness DBs), frontend 816/816.
 - Licences, billing invoices/payments, QR school invites and the Super Admin billing API
   are built, documented (`backend/docs/api/billing-api.md`, also shipped to buyers as
   `documentation/11-billing-api.md`) and covered by tests.
@@ -60,24 +63,28 @@ password is still unrotated.
   carrying the fix — is live now and passed the full smoke** (all five roles land on
   their approved surfaces, student create proven with SQL cleanup, control plane
   untouched). Full evidence: `PILOT_DEPLOYMENT_REPORT.md`. Still genuinely unverified:
-  attendance write (defect LB-2, open), the row-by-row role/isolation matrices (G6/G7),
-  the pixel gate (G3b) and backup/restore owner sign-off (G9/G10). Licence expiry rows
-  T-25..T-27 were executed live 2026-10-21 (G8 GO).
+  attendance write (defect LB-2, open), fee-invoice write (defect LB-4, open), the
+  row-by-row isolation matrix (G7), the pixel gate (G3b) and backup/restore owner
+  sign-off (G9/G10). Licence expiry rows T-25..T-27 were executed live 2026-10-21
+  (G8 GO), and the row-by-row role matrix was executed the same day on **build 11**
+  (G6 GO — record in `quality/docs/role-permission-matrix.md` §6).
 - The 6 new licence migrations have never run against a live database (nor has
   migration `2026-10-20_000016`, the provisioning idempotency guard — both are
   covered only by local test databases).
 - ~~Role smoke tests (Super Admin / School Admin / Teacher / Parent / Student) have never
   run — no owner-approved accounts exist.~~ **Smoke ran 2026-10-21** (all five roles,
-  build 10 — see `PILOT_DEPLOYMENT_REPORT.md`); the five accounts were provisioned by
-  the agent for testing, so owner approval of the accounts is still open, and the
-  row-by-row role matrix (G6) has not yet been executed against them.
+  build 10 — see `PILOT_DEPLOYMENT_REPORT.md`), and the **row-by-row role matrix (G6)
+  executed 2026-10-21 against build 11 — GO** (record in
+  `quality/docs/role-permission-matrix.md` §6); the five accounts were provisioned by
+  the agent for testing, so owner approval of the accounts is still open.
 - The QA matrices have not been executed row-by-row against live accounts:
   `quality/docs/tenant-isolation-test-matrix.md` T-1..T-24 (isolation is proven at the
   privilege layer and by automated tests, but the behavioural matrix has no execution
   record). T-25..T-27 (licence expiry on a live school) **were executed 2026-10-21** —
-  record in that document's §6.
-  `ops/release-gates.md` (re-evaluated 2026-10-21) tracks these — gates G6/G7 are
-  still NO-GO for exactly these reasons; **G8 is now GO**.
+  record in that document's §6; the role matrix **was executed 2026-10-21** —
+  record in `role-permission-matrix.md` §6.
+  `ops/release-gates.md` (re-evaluated 2026-10-21) tracks these — gate **G7 is
+  still NO-GO**; **G6 and G8 are now GO**.
 - CSRF verification is now active **globally** (build 5, 2026-10-20): the school write
   API, `/admin/schools*` POSTs and Shield's own sign-in/2FA/magic-link forms all refuse
   token-less mutations with `403`; `/api/admin/billing/*` keeps its dedicated

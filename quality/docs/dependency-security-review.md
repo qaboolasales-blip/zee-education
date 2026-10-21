@@ -19,7 +19,7 @@ Consolidates `security-config-review.md` (B-C-04):
 | Control | Config present | Enforced now | Verdict |
 |---------|----------------|--------------|---------|
 | CORS allowlist / no wildcard | Yes (`Cors.php` deny-by-default, skips `*`, `supportsCredentials=false`) | Yes — `cors` filter applied (`$required['before']`), runtime matrix **39/39** (final run, build-5 CSRF round; was 36/36 pre-round) + `SecurityHeadersRuntimeTest` (2026-10-20) | **Strong** |
-| AuthN/AuthZ filter | **2026-10-20: obsolete** — `session`/`role:*`/`superadmin`/`license` now bound to every authenticated route | Yes + negative tests; live role matrix pending accounts (G6) | OK pending G6 |
+| AuthN/AuthZ filter | **2026-10-20: obsolete** — `session`/`role:*`/`superadmin`/`license` now bound to every authenticated route | Yes + negative tests; **live role matrix executed 2026-10-21 (build 11): five approved accounts + absent-role, 403 `role_required` JSON denials, forged IDs ignored** | **OK — G6 GO** |
 | CSRF | Configured (session mode now; regenerate); **global filter enabled 2026-10-20** — `'csrf' => ['except' => ['api/admin/billing*']]` in `$globals['before']` | **Yes — global** — billing keeps `api_csrf` (JSON contract); probe `I1`/`I2`/`I3` 39/39, suite 164/671 green with the filter on | **Closed (2026-10-20 build-5 round)** — residual `tokenRandomize=false` (SC-2) |
 | Secure headers | Alias only → **enabled in `$globals['after']` (2026-10-20)** | Yes — five headers live-observed + feature tests | **Closed** |
 | Cookie `HttpOnly`/`SameSite` | Yes (true / Lax) | Yes | OK |
@@ -43,7 +43,7 @@ Consolidates `security-config-review.md` (B-C-04):
 
 ## 5. Prioritized gaps (carry into defect report M-C-05)
 
-1. **Live authZ role matrix not executed** (G6, never-waivable) — highest risk; implementation + negative tests exist (2026-10-20).
+1. ~~**Live authZ role matrix not executed** (G6, never-waivable)~~ — **closed 2026-10-21**: row-by-row live run on build 11 (five accounts + absent-role), three findings fixed in build 11, record in `role-permission-matrix.md` §6 → G6 GO.
 2. **CSP nonces + `tokenRandomize`** — remaining hardening actions before prod; global/login CSRF **closed 2026-10-20** (build-5 round, probe `I1`/`I2`/`I3` + suite 164/671), alongside the already-closed secure headers and `cookie.secure` mechanism (RB-7 fully closed; residuals = SC-6 + SC-2).
 3. **PATH-PHP missing `intl`** — env fix (use Laragon PHP); not a code defect. Addressed in CI by the pinned runtime (`.github/workflows/ci.yml`, G1/G2 closed by the first remote run `39534195074` — green — on 2026-10-21).
 4. **No provisioning idempotency guard** (R-2) — **closed 2026-10-20** (RB-4: migration `2026-10-20_000016` + `ProvisioningIdempotencyTest`).

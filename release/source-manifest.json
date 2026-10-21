@@ -3,10 +3,10 @@
     "version":  "0.1.0",
     "release_type":  "pre-release",
     "build_date":  "2026-10-21",
-    "git_commit":  "77739b6b221b321502c9511adb36ecff8cde8366",
+    "git_commit":  "c9b7685117de04a91ce2adc6500f17b5771c47a3",
     "git_tag":  null,
     "file_count":  1308,
-    "total_bytes":  13023057,
+    "total_bytes":  13025859,
     "surfaces":  [
                      "Super Admin portal (/portal)",
                      "School dashboard (/school)",

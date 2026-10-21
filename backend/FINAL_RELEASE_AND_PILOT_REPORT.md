@@ -7,25 +7,30 @@
 - Node: v24.17.0, npm 12.0.2
 - Frontend UI lock: PASS (3/3 reference files unchanged)
 - Frontend tests: PASS (816/816 — see "Frontend blocker resolution" below for the earlier failure)
-- Backend phpunit: PASS (**169 tests, 687 assertions, 0 skipped, 0 failures** — current;
-  earlier phases recorded 62/145, 69/175, 150/603, 155/621, 161/653 and 164/673 in their
-  own sections below; +5 tests = `HomeLandingTest`, the regression guard for the
-  post-login redirect loop found by the 2026-10-21 live smoke)
-- Package (build 10, 2026-10-21): first shipped-code change since build 5 — the root-route
-  redirect-loop fix (commit `77739b6b221b321502c9511adb36ecff8cde8366`; `git describe` =
-  `v0.1.0-pre-2-g77739b6`, so the manifest records `git_tag: null` — the annotated tag
+- Backend phpunit: PASS (**179 tests, 715 assertions, 0 skipped, 0 failures** — current;
+  earlier phases recorded 62/145, 69/175, 150/603, 155/621, 161/653, 164/673 and 169/687
+  in their own sections below; +5 tests = `HomeLandingTest`, the regression guard for the
+  post-login redirect loop found by the 2026-10-21 live smoke; +10 tests =
+  `RoleFilterApiDenialTest`, the G6 JSON-denial/route-group/registration contract)
+- Package (**build 11, 2026-10-21 — current; deployed to live Hostinger the same day and
+  the artefact the G6 role matrix executed against**): the G6 role-matrix fixes —
+  JSON 401/403 API denials, staff/fees routes tightened to School-Admin-only, superadmin
+  school-link exemption, public registration disabled (commit `c9b7685…`; `git describe` =
+  `v0.1.0-pre-5-gc9b7685`, so the manifest records `git_tag: null` — the annotated tag
   `v0.1.0-pre` still points at build 9's commit `b1267df…`, and a scan of every shipped
   `.txt/.md/.html` found 0 "no Git tag" claims); build-package.ps1 verifier 35/35 clean on
   build tree and inside the extracted ZIP; ZIP SHA-256
-  `c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`
-  (build 9's `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c` superseded,
-  kept as `*.zip.bak-20261021-094201`; build 8 as `*.zip.bak-20261021-075532`;
+  `f4e9e1dab40775fe90e0329b201a79dfa46c732e75d0afbd87ae448d89bf15b2`
+  (4,108,746 bytes; build 10's `c31ad281…` superseded and kept on the host as the
+  `Zee_Education_v0.1.0_b10` tree for instant symlink rollback; build 9's
+  `46f5a487…` kept as `*.zip.bak-20261021-094201`; build 8 as `*.zip.bak-20261021-075532`;
   build 7 as `*.zip.bak-20261020-183756`; builds 6/5/4/3/2 as `*.zip.bak-20261020-093116` /
   `-085852` / `-083633` / `-052205` / `-025056`; build 1 as `*.zip.bak-20261019-224837`).
-  Builds 6-9 were documentation/tag-only successors to build 5. **Build 10 is deployed to
-  live Hostinger and passed the full live re-smoke** (see `PILOT_DEPLOYMENT_REPORT.md`:
-  all five roles land on their approved surface, licence Active, student write verified
-  with SQL cleanup, control plane untouched).
+  Builds 6-9 were documentation/tag-only successors to build 5. **Build 10 was deployed
+  live and passed the full live re-smoke** (see `PILOT_DEPLOYMENT_REPORT.md`: all five
+  roles land on their approved surface, licence Active, student write verified with SQL
+  cleanup, control plane untouched); **build 11 deployed after it with no-op migrations
+  and is the G6-execution artefact** (matrix record: `quality/docs/role-permission-matrix.md` §6).
 
 ## Git commit hash
 77739b6 (build-10 head; tag `v0.1.0-pre` at `b1267df`, 2 commits back)
@@ -276,7 +281,8 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   tested — but each still fails its evidence bar: live T-matrix execution (G6, G7),
   owner RPO/RTO sign-off (G9, G10), CI runtime pin (G1, G2), runtime CORS asserts (G5),
   pixel gate (G3b). *(Update 2026-10-21: G1, G2, G5 already GO with remote runs/runtime
-  matrix; G8 cleared the same day by a live T-25..T-27 execution — see the status
+  matrix; G8 cleared the same day by a live T-25..T-27 execution, and **G6 cleared later
+  the same day by the live role-matrix run on build 11** — see the status
   section at the end of this file.)*
 - Overall pilot verdict in that document: **NO-GO**, consistent with
   `FINAL_RELEASE_STATUS: BLOCKED`.
@@ -403,16 +409,22 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
    (`46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`, 4,107,274 bytes)
    which records the new annotated tag `v0.1.0-pre` in `package-manifest.json` (was
    hardcoded `null`) and updates the shipped tag-honesty statements (README_FIRST,
-   CHANGELOG, doc10, index.html), and finally by the current **build 10**
+   CHANGELOG, doc10, index.html), then by **build 10**
    (`c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`, 4,107,754 bytes,
    commit `77739b6`) — the first shipped-code change since build 5: the root-route
-   post-login redirect-loop fix (LB-1), deployed to live Hostinger the same day.
+   post-login redirect-loop fix (LB-1), deployed to live Hostinger the same day, and
+   finally by the current **build 11**
+   (`f4e9e1dab40775fe90e0329b201a79dfa46c732e75d0afbd87ae448d89bf15b2`, 4,108,746 bytes,
+   commit `c9b7685`) — the G6 role-matrix fixes (JSON API denials, staff/fees route
+   tightening, superadmin school-link exemption, registration disabled), deployed to live
+   Hostinger the same day and the artefact the G6 matrix executed against.
    Build 8 (`b249281c…`, 4,107,190 bytes) had fixed the
    stale control-plane table count (14 → 21) in `database/README.md`
    and `documentation/03-first-run-setup.md` (verified against the live control DB:
    21 tables; school DB remains 22). No shipped code changed across builds 5-9; all
    build-5 test/probe results carry over (build 10 adds its own suite results:
-   backend 169/687). Builds 6/7/8/9 kept as
+   backend 169/687; build 11 adds `RoleFilterApiDenialTest`, backend 179/715).
+   Builds 6/7/8/9 kept as
    `*.zip.bak-20261020-093116` / `*.zip.bak-20261020-183756` / `*.zip.bak-20261021-075532` /
    `*.zip.bak-20261021-094201`.
 - RB-7 **closed** (residuals tracked only as SC-2 `tokenRandomize` + SC-6 CSP — both
@@ -429,14 +441,19 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   control plane untouched). Evidence: `PILOT_DEPLOYMENT_REPORT.md`. `FINAL_RELEASE_STATUS`
   stays `BLOCKED` for the remaining reasons below.
 - ~~Role smoke tests still never executed.~~ **Closed 2026-10-21 (live):** all five roles
-  signed in on production and their landings/denials were verified. What remains open is
-  the row-by-row role-permission matrix run (G6) and attendance write (defect LB-2, open).
+  signed in on production and their landings/denials were verified. ~~The row-by-row
+  role-permission matrix run (G6)~~ also **closed 2026-10-21**: executed against build 11
+  with the five accounts + an absent-role account, three findings fixed in build 11
+  (JSON API denials, route tightening, superadmin invite exemption, registration off) —
+  gate **G6 GO**, record in `quality/docs/role-permission-matrix.md` §6. What remains open
+  on this line: attendance write (defect LB-2) and fee-invoice write (defect LB-4).
 - QA matrices: **T-25..T-27 (licence expiry) executed live 2026-10-21** — expired
   licence kept reads 200 with full rows, gated writes with 402 `license_expired`, left
   a byte-identical 22-table checksum snapshot, restored cleanly (gate **G8 GO**; record:
   `quality/docs/tenant-isolation-test-matrix.md` §6). T-1..T-24 (isolation behaviour)
-  never executed row-by-row — the evidence bar for gate **G7** (G6 role matrix likewise
-  open).
+  never executed row-by-row — the evidence bar for gate **G7**. *(The G6 role matrix was
+  likewise open on 2026-10-20; it executed later the same week — 2026-10-21, build 11 —
+  and **G6 is now GO**.)*
 - ~~No Git tag~~ — **closed 2026-10-21**: the tree was committed and pushed to
   `github.com/qaboolasales-blip/zee-education`, annotated tag **`v0.1.0-pre`** (commit
   `b1267df…`) was pushed, and build 9 was rebuilt from that tag so

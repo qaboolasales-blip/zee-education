@@ -17,7 +17,7 @@
 | ID | Category | Item | Evidence | Priority / owner |
 |----|----------|------|----------|------------------|
 | RB-1 | S1 | No server-side authentication/authorization exists | Backends=Health/Home/Setup; Filters/Models/Libraries empty (2026-10-17) | Must fix before any auth endpoint exists |
-| RB-2 | S1 | No server-side auth negative-tested | `role-policy-test-cases.md` spec only; suite has 0 auth tests (27/27 has none) | G6 gate |
+| RB-2 | S1 | No server-side auth negative-tested | ~~`role-policy-test-cases.md` spec only; suite has 0 auth tests~~ — negatives green + **live role matrix executed 2026-10-21 (build 11)** | G6 → **GO** |
 | RB-3 | S1 | Tenant isolation untested at runtime | No provisioning; no 2nd school; T-1..T-27 + CN/ISO not run | G7 gate |
 | RB-4 | S1 | Provisioning idempotency guard missing (R-2) | `provisioning_jobs` has no unique on (school_id,type)/target_database | Pre-pilot must close |
 | RB-5 | S1 | No backup/restore drill executed | M-C-02 blocked (no school DB); runbook §5 open | G9 gate |
@@ -67,7 +67,7 @@ see the live-smoke section at the bottom of this file.)*
 | ID | State 2026-10-20 | Evidence |
 |----|-------------------|----------|
 | RB-1 | **CLOSED** — auth exists | Shield auth (throttling, identity sync); `session`/`role:*`/`superadmin`/`license` filters on every authenticated route; `RolePolicy` centralised checks |
-| RB-2 | **NARROWED — still open** | Automated negatives green (billing non-superadmin JSON 401/403, licence enforcement, write-API roles) but the `role-permission-matrix.md` live row-by-row run has never executed (gate G6) |
+| RB-2 | **CLOSED — live matrix executed 2026-10-21** | Automated negatives green (billing non-superadmin JSON 401/403, licence enforcement, write-API roles) **plus** the `role-permission-matrix.md` live row-by-row run on build 11 (five approved accounts + absent-role account: 403 `role_required` JSON denials, forged IDs ignored, registration closed, superadmin learner denial; three pre-fix findings fixed in build 11) → **gate G6 GO** (record: matrix §6) |
 | RB-3 | **NARROWED — still open** | Provisioning exists; isolation proven live at the privilege layer (`ERROR 1142` both directions) + automated cross-school tests; **T-1..T-24 matrix rows still have no execution record** (gate G7; T-25..T-27 now recorded — see RB-6) |
 | RB-4 | **CLOSED (schema + behaviour)** | Migration `2026-10-20_000016` adds `provisioning_jobs.idempotency_key` + UNIQUE `uq_provisioning_jobs_idempotency_key` (DB rejects duplicate keys, error 1062; multiple NULLs stay allowed for keyless rows). Chosen over UNIQUE `(school_id,type)`/`target_database` because one target legitimately accumulates many jobs over time (install today, migrate each release) — uniqueness belongs to the caller-supplied key, per C-C-03 rec #1. Behaviour pinned in `ProvisioningIdempotencyTest` (5 tests/18 assertions): index+column exist, duplicate key rejected by the DB, NULL keys allowed, duplicate `school_code` refused 409 with one row remaining, re-provision of a completed school returns `Already provisioned` without state change |
 | RB-5 | **CLOSED (execution)** — owner sign-off open | Backup/restore drill executed on live Hostinger across both databases; owner RPO/RTO/retention placeholders still unfilled (gates G9/G10) |
@@ -114,9 +114,35 @@ Full smoke evidence: `PILOT_DEPLOYMENT_REPORT.md` (section "Live smoke pass 2026
 | LB-1 | S1 (pilot-blocking) | **CLOSED 2026-10-21, build 10, live-verified** | Infinite post-login redirect loop for every non-Super-Admin role: `Home::index` sent signed-in school users to `/login`, while Shield's `redirects['login']=null` sends authenticated visitors of `/login` back to the site root - `/` <-> `/login` forever (5-hop chain captured live with build 9; pre-existing since before build 9  -  old and new `Home.php` md5 identical  -  so every deployed build carried it). Fix: authed superadmin -> `/portal`, authed staff with linked school -> `/school`, any other authed user -> `/setup` (approved display-only placeholder); anonymous behaviour unchanged; invariant "authed never redirected to /login" is now code-commented and pinned by `HomeLandingTest` (5 tests/14 assertions). Live re-smoke on build 10: School Admin -> `/school` 200, Teacher -> `/school` 200, Parent -> `/setup` 200, Student -> `/setup` 200, Super Admin -> `/portal` 200, anonymous `/` -> 302 `/login`. |
 | LB-2 | S3 (open, pre-pilot) | **OPEN** | `POST /api/school/attendance` always fails `500` on a baseline school: `SchoolRecordService::markAttendance()` inserts only `student_id`/`attendance_date`/`status`/timestamps, but the schema (`2026-10-18_100004_create_attendance.php`) requires NOT NULL FK `academic_session_id`, NOT NULL FK `class_id` and NOT NULL `recorded_by`, and `docs/attendance-api.md` documents exactly those scope/actor fields  -  the live FK error (`attendance_academic_session_id_foreign`) was captured in `writable/logs`. Any real fix must resolve the current academic session, the student's class and the signed-in actor, which first needs academic-structure provisioning (no approved flow creates `academic_sessions`/`classes` rows yet)  -  so it must NOT be papered over with seeded fake rows. Not user-reachable today: no frontend code calls `api/school/attendance` (repo-wide grep = 0 hits) and no approved UI control is bound to it; `AttendanceTest` only checks file/doc existence, which is why the suite never caught this. Note for the record: the 2026-10-19 claim "Production evidence: write API 5/5" in `PILOT_DEPLOYMENT_REPORT.md` is **not reproducible for attendance** on 2026-10-21  -  student create, staff create and fees paths remain green, attendance write does not. |
 | LB-3 | S4 (observation) | open | Live responses carry `x-frame-options`, `x-content-type-options`, `x-permitted-cross-domain-policies: none`, `referrer-policy`, CSP `upgrade-insecure-requests`; no `Strict-Transport-Security` header is set by the application (TLS is terminated by the host). Not claimed as a defect anywhere in the gate set  -  recorded so no future report overstates the header inventory. |
+| LB-4 | S3 (open, pre-pilot) | **OPEN (found 2026-10-21, G6 round)** | `POST /api/school/fees/invoices` always fails `500` on a baseline school **for the role that is allowed to call it** (school admin): `SchoolRecordService::createFeeInvoice()` sends nulls, but the schema (`2026-10-18_100007_create_fees.php`) requires NOT NULL FK `academic_session_id` and NOT NULL `due_date` -  same family as LB-2 (academic-structure provisioning first; no fake-seeding). Role wiring is correct: teacher/parent/student/superadmin now get `403 role_required` before the body (build 11 route tightening); the read path works (`GET /api/school/fees/invoices` → 200). Consequence chain observed live: invoice 500 → no invoice row → receipt create answers `200 ok:false "An invoice is required"`. |
 
 **Live-smoke verdict 2026-10-21:** the S1 loop (LB-1) is closed with live evidence.
-Remaining NO-GO drivers: RB-2/RB-3 live matrices (G6/G7), G3b pixel
+Remaining NO-GO drivers: RB-3 live matrix (G7), G3b pixel
 gate, G9/G10 owner sign-offs, SSH-password rotation (owner), third-party buyer test,
-plus LB-2 as a pre-pilot fix item. *(Update 2026-10-21 later the same day: RB-6's live
+plus LB-2/LB-4 as pre-pilot fix items. *(Update 2026-10-21 later the same day: RB-6's live
 rows T-25..T-27 executed — G8 flipped GO; drivers list above now excludes G8.)*
+
+---
+
+## Role-matrix execution round 2026-10-21 (build 10 → build 11) — RB-2 / gate G6
+
+The `role-permission-matrix.md` live row-by-row run executed the same day as G8, first
+against build 10 (baseline, exposing four findings) and again against **build 11**
+(commit `c9b7685`, package SHA `f4e9e1dab40775fe90e0329b201a79dfa46c732e75d0afbd87ae448d89bf15b2`,
+deployed with no-op migrations, `public_html` flipped b10 → b11 with instant rollback
+target kept) after the findings were fixed. Suites re-run from fresh empty CI-harness
+databases: backend **179/715** (+10 = `RoleFilterApiDenialTest`), frontend **816/816**.
+
+| ID | Severity | State | Item / evidence |
+|----|----------|-------|-----------------|
+| G6-F1 | S2 | **FIXED in build 11, live-verified** | Permission refusals on `/api/*` answered **302/303 redirects** even with `Accept: application/json` (no JSON denial contract — the `RoleFilter` always redirected). Fix: route-path API check mirroring `SuperAdminFilter` → **401 `unauthenticated` / 403 `role_required` / 403 `school_not_linked` JSON**. Live: every denial probed (absent role, superadmin-learner, teacher-on-staff/fees, forged-role claims) returns 403 JSON with a stable `error` code. |
+| G6-F2 | S2 | **FIXED in build 11, live-verified** | Teacher could `POST /api/school/staff` (200) and reach `fees/invoices` (500 body) although matrix §3 rows 6/17/18 say Teacher = N. Fix: `Routes.php` → staff + fees/invoices + fees/receipts now `role:school_admin` only (attendance keeps `role:school_admin,teacher`). Live: teacher staff/invoice create → **403 `role_required` JSON**; school admin unchanged. |
+| G6-F3 | S2 | **FIXED in build 11, live-verified** | Superadmin minting `/api/connect/invite` was refused **302/303 → `/`** by the school-link rule (routes listing `superadmin` still demanded a linked school — platform operator can never have one; the invite flow was dead for its primary user). Fix: school-link check exempts superadmin when the route's role list includes `superadmin`. Live: superadmin invite now **reaches the controller → 409 "no verified domain"** (its real business answer). |
+| G6-F5 | S2 | **FIXED in build 11, live-verified** | Public self-registration open: GET `/register` 200 with a working form; a self-registered default-group `user` account auto-logged-in (and was denied everywhere — but the open form was a spam/abuse surface and docs allow the switch). Fix: `Config\Auth::$allowRegistration = false`. Live: GET `/register` → **302, no form**; POST with a valid CSRF token → **303, zero users created** (identity count checked). |
+| LB-4 | S3 | **OPEN (found this round)** | fee-invoice body 500 for the allowed role — see LB-4 row above. |
+| G6-D1..D-3 | — | recorded deviations | teacher students-read stricter than §3 "C" (blanket 403); superadmin invoices-read 403 per §0.4; parent/teacher row-level "C" scope not implemented (blanket deny) — all in matrix §6. |
+
+**Round verdict 2026-10-21:** **RB-2 CLOSED / gate G6 GO.** Remaining NO-GO drivers
+reduce to: RB-3 (G7 isolation matrix T-1..T-24), G3b pixel gate, G9/G10 owner
+sign-offs, SSH-password rotation (owner), third-party buyer test, plus the pre-pilot
+fix items LB-2 and LB-4 (academic-structure scope, owner decision).
