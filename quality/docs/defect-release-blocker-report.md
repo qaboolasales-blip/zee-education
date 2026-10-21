@@ -68,7 +68,7 @@ see the live-smoke section at the bottom of this file.)*
 |----|-------------------|----------|
 | RB-1 | **CLOSED** — auth exists | Shield auth (throttling, identity sync); `session`/`role:*`/`superadmin`/`license` filters on every authenticated route; `RolePolicy` centralised checks |
 | RB-2 | **CLOSED — live matrix executed 2026-10-21** | Automated negatives green (billing non-superadmin JSON 401/403, licence enforcement, write-API roles) **plus** the `role-permission-matrix.md` live row-by-row run on build 11 (five approved accounts + absent-role account: 403 `role_required` JSON denials, forged IDs ignored, registration closed, superadmin learner denial; three pre-fix findings fixed in build 11) → **gate G6 GO** (record: matrix §6) |
-| RB-3 | **NARROWED — still open** | Provisioning exists; isolation proven live at the privilege layer (`ERROR 1142` both directions) + automated cross-school tests; **T-1..T-24 matrix rows still have no execution record** (gate G7; T-25..T-27 now recorded — see RB-6) |
+| RB-3 | **NARROWED — still open** | Provisioning exists; isolation proven live at the privilege layer (`ERROR 1142` both directions) + automated cross-school tests; **B-independent matrix rows recorded 2026-10-21 (isolation matrix §7); T-1/3/5/8-12 pending one host DB grant** (gate G7; T-25..T-27 now recorded — see RB-6) |
 | RB-4 | **CLOSED (schema + behaviour)** | Migration `2026-10-20_000016` adds `provisioning_jobs.idempotency_key` + UNIQUE `uq_provisioning_jobs_idempotency_key` (DB rejects duplicate keys, error 1062; multiple NULLs stay allowed for keyless rows). Chosen over UNIQUE `(school_id,type)`/`target_database` because one target legitimately accumulates many jobs over time (install today, migrate each release) — uniqueness belongs to the caller-supplied key, per C-C-03 rec #1. Behaviour pinned in `ProvisioningIdempotencyTest` (5 tests/18 assertions): index+column exist, duplicate key rejected by the DB, NULL keys allowed, duplicate `school_code` refused 409 with one row remaining, re-provision of a completed school returns `Already provisioned` without state change |
 | RB-5 | **CLOSED (execution)** — owner sign-off open | Backup/restore drill executed on live Hostinger across both databases; owner RPO/RTO/retention placeholders still unfilled (gates G9/G10) |
 | RB-6 | **CLOSED — defect and live evidence** | Licensing path exists: `LicenseService`/`LicenseFilter`/`BillingApi`, six migrations, `LicenseEnforcementTest` (11) + `BillingApiTest` (20) green; **T-25..T-27 executed live 2026-10-21** (expired → reads 200 with full rows, writes 402 `license_expired`, 22-table checksum snapshot identical before/during expiry, restore verified — record in `tenant-isolation-test-matrix.md` §6) → **gate G8 GO** |
@@ -143,6 +143,7 @@ databases: backend **179/715** (+10 = `RoleFilterApiDenialTest`), frontend **816
 | G6-D1..D-3 | — | recorded deviations | teacher students-read stricter than §3 "C" (blanket 403); superadmin invoices-read 403 per §0.4; parent/teacher row-level "C" scope not implemented (blanket deny) — all in matrix §6. |
 
 **Round verdict 2026-10-21:** **RB-2 CLOSED / gate G6 GO.** Remaining NO-GO drivers
-reduce to: RB-3 (G7 isolation matrix T-1..T-24), G3b pixel gate, G9/G10 owner
+reduce to: RB-3 (G7's school-B-dependent rows — one host DB grant; the B-independent
+half recorded 2026-10-21), G3b pixel gate, G9/G10 owner
 sign-offs, SSH-password rotation (owner), third-party buyer test, plus the pre-pilot
 fix items LB-2 and LB-4 (academic-structure scope, owner decision).

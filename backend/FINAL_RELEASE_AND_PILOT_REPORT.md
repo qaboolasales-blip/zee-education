@@ -451,7 +451,9 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   licence kept reads 200 with full rows, gated writes with 402 `license_expired`, left
   a byte-identical 22-table checksum snapshot, restored cleanly (gate **G8 GO**; record:
   `quality/docs/tenant-isolation-test-matrix.md` §6). T-1..T-24 (isolation behaviour)
-  never executed row-by-row — the evidence bar for gate **G7**. *(The G6 role matrix was
+  **partially executed 2026-10-21** — B-independent rows PASS (T-2, T-4, T-22 +
+  N/A-now absent-surface rows; matrix §7); the school-B-dependent rows need one host
+  DB grant — still the evidence bar for gate **G7**. *(The G6 role matrix was
   likewise open on 2026-10-20; it executed later the same week — 2026-10-21, build 11 —
   and **G6 is now GO**.)*
 - ~~No Git tag~~ — **closed 2026-10-21**: the tree was committed and pushed to

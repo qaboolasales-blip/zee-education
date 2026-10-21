@@ -77,14 +77,16 @@ password is still unrotated.
   executed 2026-10-21 against build 11 — GO** (record in
   `quality/docs/role-permission-matrix.md` §6); the five accounts were provisioned by
   the agent for testing, so owner approval of the accounts is still open.
-- The QA matrices have not been executed row-by-row against live accounts:
-  `quality/docs/tenant-isolation-test-matrix.md` T-1..T-24 (isolation is proven at the
-  privilege layer and by automated tests, but the behavioural matrix has no execution
-  record). T-25..T-27 (licence expiry on a live school) **were executed 2026-10-21** —
-  record in that document's §6; the role matrix **was executed 2026-10-21** —
+- The isolation matrix is **partially executed against live accounts**:
+  `quality/docs/tenant-isolation-test-matrix.md` T-2/T-4/T-22 + the absent-surface rows
+  ran live 2026-10-21 (**record: §7**), but the school-B-dependent rows (T-1, T-3, T-5,
+  T-8..T-12) are blocked on **one host action** — create DB `u121986687_zee_school_g7probe`
+  and grant `u121986687_zee_school_1` ALL on it (hPanel; neither app MySQL user may
+  `CREATE DATABASE`). T-25..T-27 (licence expiry on a live school) **were executed
+  2026-10-21** — record in that document's §6; the role matrix **was executed 2026-10-21** —
   record in `role-permission-matrix.md` §6.
   `ops/release-gates.md` (re-evaluated 2026-10-21) tracks these — gate **G7 is
-  still NO-GO**; **G6 and G8 are now GO**.
+  still NO-GO** (half recorded, half host-blocked); **G6 and G8 are now GO**.
 - CSRF verification is now active **globally** (build 5, 2026-10-20): the school write
   API, `/admin/schools*` POSTs and Shield's own sign-in/2FA/magic-link forms all refuse
   token-less mutations with `403`; `/api/admin/billing/*` keeps its dedicated

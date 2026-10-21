@@ -79,7 +79,7 @@ Each box is ticked only where a live or automated check actually executed it (re
 - [x] **Role filter:** a server-side route filter maps role→permission per §3; removing/disabling the client-side UI does **not** grant access. — executed live row-by-row (§6); route groups tightened in build 11 to match §3.
 - [ ] **Server-side scope:** a Teacher requesting another teacher's class, or a Parent requesting a non-linked child, is rejected server-side by ID ownership check — not merely filtered in the UI. — **not implemented as ID-ownership scoping**; today these routes blanket-deny parent/teacher reads (stricter than the §3 "C" cells — deviation D-3, §6). Row-level/parent-linked scoping remains planned; cross-tenant row ownership is executed under G7 (`tenant-isolation-test-matrix.md`).
 - [x] **Never trust browser IDs:** forging `school_id`, `role`, `user_id`, or child IDs in the request (body/query/session) does not widen access. — executed live with query- and body-forgery probes (§6); forged values ignored, forged *role claims* still refused by the session's real group.
-- [ ] **Cross-school denial:** any attempt to reach school B's data through school A's session is rejected (403/404) — see `quality/docs/tenant-isolation-test-matrix.md` (gate **G7**, T-1..T-24; pending).
+- [ ] **Cross-school denial:** any attempt to reach school B's data through school A's session is rejected (403/404) — see `quality/docs/tenant-isolation-test-matrix.md` (gate **G7**; B-independent rows executed live 2026-10-21 — isolation matrix §7; T-1/3/5/8-12 pending school-B DB grant).
 - [ ] **Export scoping:** exports honour the same row-level scope as reads (a Parent export contains only linked children). — **N/A-now**: no export endpoints exist (all four 404, recorded under G8 T-26); re-check when exports ship.
 - [x] **Super Admin learner-data denial:** Super Admin session cannot read learner/attendance/results/fee records by default (403), unless the audited break-glass path is used, which must write an audit log entry. — executed live: students/invoices → **403 `role_required` JSON**, `/school`,`/m` → 302; no break-glass path exists (none needed for V1; §0.4 keeps it planned).
 - [x] **License expiry:** suspending/expiring a license does **not** revoke a school's own data access or export capability. — executed live under G8 (T-25..T-27, `tenant-isolation-test-matrix.md` §6).
@@ -106,7 +106,7 @@ SMS, online payment gateway, automated/unofficial WhatsApp API and native app pa
 | Super Admin learner-data denial | **PASS** | superadmin: students/invoices → **403 `role_required` JSON**; `/school`,`/m` → 302; platform routes (billing, `/admin/schools`, `/portal`) → 200 while every other role → 403 JSON / 302 |
 | License expiry (G8) | **PASS (G8)** | T-25..T-27 record in `tenant-isolation-test-matrix.md` §6 |
 | Server-side ID-ownership scope | **NOT EXECUTED — deviation D-3** | parent/teacher blanket-denied instead of linked-children/assigned-class scoping (stricter); planned |
-| Cross-school denial (G7) | **PENDING G7** | T-1..T-24 in `tenant-isolation-test-matrix.md` |
+| Cross-school denial (G7) | **PARTIAL** — B-independent rows PASS 2026-10-21 (isolation matrix §7); gate still PENDING | T-1/3/5/8-12 need school B's DB (host grant) — `tenant-isolation-test-matrix.md` §7.3 |
 | Export scoping | **N/A-now** | export endpoints 404 (G8 T-26) |
 
 ### §3 row dispositions (live)

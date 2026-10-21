@@ -92,7 +92,9 @@ the same smoke is LB-2 there (open, pre-pilot).
    licence rows T-25..T-27 executed live 2026-10-21 (G8 GO, record in
    `quality/docs/tenant-isolation-test-matrix.md` §6); **G6 role matrix executed live
    2026-10-21 against build 11 — GO** (record in `quality/docs/role-permission-matrix.md`
-   §6); G7 isolation matrix T-1..T-24 still pending row-by-row run.
+   §6); G7 isolation matrix: **B-independent rows executed live 2026-10-21** (T-2, T-4,
+   T-22 PASS + absent-surface rows N/A-now; record in isolation matrix §7) — the rows
+   needing school B (T-1/3/5/8-12) are pending **one host DB grant**.
 2. ~~No Git tag exists.~~ **Closed 2026-10-21:** annotated tag `v0.1.0-pre` (commit
    `b1267df…`) pushed; build 9 rebuilt from it; build 10 cut2 commits later
    (`git describe` = `v0.1.0-pre-2-g77739b6`, manifest records `git_tag: null`, zero
