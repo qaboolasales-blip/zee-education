@@ -2,8 +2,105 @@
 
 ## PILOT_DEPLOYMENT_STATUS: BLOCKED
 
-Updated: 2026-10-19
+Updated: 2026-10-21
 Target: mediumaquamarine-grouse-335108.hostingersite.com (Hostinger, u121986687 @ 217.21.91.234:65002)
+
+## LIVE SMOKE PASS 2026-10-21 — build 9 deployed, S1 loop found, build 10 deployed, smoke PASS
+
+This is the first full live deployment smoke of the tagged release line. It ran in
+two deployment steps because the smoke of build 9 found an S1 defect; build 10
+carries the fix and is what is live now.
+
+### Deployment evidence (this pass)
+
+Backups taken before any change:
+  ~/zee_backups/live_control_predeploy_20261021-035459.sql
+  ~/zee_backups/live_school_predeploy_20261021-035459.sql
+  ~/deploy_backups/live_domain_predeploy_20261021-035459.tgz
+  (previous public_html target recorded at flip time: .../Zee_Education_v0.1.0/application/public)
+
+Step 1 - build 9 (`46f5a487…`):
+  - Extracted to ~/domains/<host>/Zee_Education_v0.1.0/ (1,309 files incl. live .env).
+    Compress-Archive explicit dir entries extract as mode 0000 on unzip 6.00; fixed
+    with `chmod -R u+rwX` (0 mode-0000 paths re-verified afterwards).
+  - Live .env + writable state (install.lock/.htaccess/uploads/logs/sessions) carried over.
+  - Migrations in fixed order: Shield, Settings, App -> control plane 15 -> 21 tables;
+    AppSchool untouched (school DB, 8 rows `---` by design, migrated at provisioning).
+  - `php spark db:seed LicensePlansSeeder` (3 plans, idempotent).
+  - Licence issued live for pilot school id 3 via POST /api/admin/billing/issue
+    (plan starter, active 2026-10-21 -> 2027-10-21, grace to 2027-11-04); portal shows
+    the Active chip.
+  - public_html symlink flipped to build 9. Smoke then ran (results below marked
+    build-9) and found LB-1.
+
+Step 2 - build 10 (`c31ad281…`, commit `77739b6` - first shipped-code change since build 5):
+  - LB-1 fixed in backend/app/Controllers/Home.php + regression suite HomeLandingTest;
+    backend 169/687, frontend 816/816 green from fresh CI-harness DBs before the build.
+  - Extracted to Zee_Education_v0.1.0_b10/ (zip nests one Zee_Education_v0.1.0/ level),
+    same chmod/.env/writable wiring; migrations all no-op (0 non-AppSchool pending);
+    data re-verified: control 21 tables, schools 1, users 5, licenses 1, plans 3.
+  - public_html flipped to build 10; **build 9 tree kept on disk for instant rollback**
+    (`ln -sfn .../Zee_Education_v0.1.0/application/public public_html`).
+
+### Smoke results - build 10 (live, this pass)
+
+| Check | Result |
+|---|---|
+| GET / (anonymous) | 302 -> /login |
+| GET /login | 200 |
+| GET /api/health | 200, v0.1.0, database connected, production |
+| GET /install | 302 (installer locked) |
+| GET /role_accounts_credentials.txt | 404 (not web-reachable) |
+| Security headers | x-frame-options SAMEORIGIN; x-content-type-options nosniff; x-permitted-cross-domain-policies none; referrer-policy same-origin; CSP upgrade-insecure-requests (no HSTS from the app: LB-3) |
+| Super Admin sign-in | login 303 -> 200 /portal |
+| School Admin sign-in | login 303 -> 200 /school (build 9: infinite loop) |
+| Teacher sign-in | login 303 -> 200 /school (build 9: infinite loop) |
+| Parent sign-in | login 303 -> 200 /setup (build 9: infinite loop) |
+| Student sign-in | login 303 -> 200 /setup (build 9: infinite loop) |
+| Licence state | Active chip on /portal (1 active licence) |
+| GET /api/school/students | 200 (school resolved server-side from session, ADR-003) |
+| POST /api/school/students (validation sanity) | 200 `{ok:false,"First name is required"}` - CSRF passed, no write |
+| POST /api/school/students (real create) | 200 `{ok:true,"Student added","id":3}`; DB row verified (admission SMOKE-B10-*); list count 2 -> 3 |
+| POST /api/school/attendance | **500 -> defect LB-2 (open)**: FK `attendance_academic_session_id` fails because the service omits the schema-required `academic_session_id`/`class_id`/`recorded_by`; no frontend code calls this endpoint (0 grep hits), so it is pre-pilot, not pilot-blocking |
+| Cleanup | SQL: student + attendance test rows deleted; school DB restored to students 2 / attendance 0; control plane users/schools/licenses 5/1/1 unchanged before vs after |
+| Super Admin vs school surfaces | /m and /school stay 302 for superadmin (role filter, by design); parent/student still denied /m and /school |
+
+Build-9-era smoke (same day, superseded for the loop item but still true for the
+static checks): anonymous/health/install/portal/header results identical to the
+table above; licence issuance + Active chip happened on build 9 and carry over
+(data unchanged).
+
+### S1 defect found and closed by this pass (LB-1)
+
+Build 9's smoke proved an infinite `/` <-> `/login` redirect loop for every signed-in
+non-Super-Admin role (5-hop chain captured): `Home::index` redirected authed school
+users to `/login`, Shield's `redirects['login']=null` sends them straight back to the
+root. It pre-dated build 9 (old/new Home.php md5 identical), i.e. every deployed build
+had it, and no test covered authed landing (AuthTest only asserts the anonymous path).
+Fixed, re-tested (HomeLandingTest pins all four role branches + the
+authed-never-goes-to-/login invariant), rebuilt as build 10, deployed, and every role
+now lands on a real page (table above). Full write-up:
+`quality/docs/defect-release-blocker-report.md` (LB-1). Attendance write defect from
+the same smoke is LB-2 there (open, pre-pilot).
+
+## STILL BLOCKED - exact remaining gates
+1. ~~Role smoke tests were never executed.~~ **Closed 2026-10-21 (live):** all five
+   roles signed in on production; approved-surface landings and role denials verified
+   (table above); licence Active; student create proven end-to-end (API + DB + cleanup).
+   Attendance/results/report exports: attendance write is defect LB-2 (open, unbound
+   endpoint); the rest still have no live row-by-row record (G6/G7/G8 matrices).
+2. ~~No Git tag exists.~~ **Closed 2026-10-21:** annotated tag `v0.1.0-pre` (commit
+   `b1267df…`) pushed; build 9 rebuilt from it; build 10 cut2 commits later
+   (`git describe` = `v0.1.0-pre-2-g77739b6`, manifest records `git_tag: null`, zero
+   contradictory claims inside the package).
+3. The SSH password exposed earlier in chat and in the local backend/.env has still not
+   been rotated by the owner. That credential is live. (PAT `ghp_41u0…` chat-exposed
+   in this project's history also still needs revoke/rotate.)
+4. No independent third-party Hostinger buyer account test has been done.
+5. FINAL_RELEASE_STATUS in backend/FINAL_RELEASE_AND_PILOT_REPORT.md is still BLOCKED
+   (G3b pixel gate, G6/G7/G8 live matrices, G9/G10 owner sign-offs).
+6. Defect LB-2 (attendance write 500) is open - pre-pilot fix, needs academic-structure
+   scope resolution (session/class/actor), not seedable fake data.
 
 ## NEW THIS PASS
 
@@ -70,7 +167,7 @@ Live endpoints:
 Sign-in verified end to end: known-old password REJECTED, new password from the
 0600 server file accepted, approved portal rendered.
 
-## STILL BLOCKED - exact remaining gates
+## STILL BLOCKED - exact remaining gates (2026-10-19 state - superseded by the 2026-10-21 list in the live-smoke section above)
 1. Role smoke tests were never executed: no Super Admin / School Admin / Teacher / Parent /
    Student trial accounts exist, so attendance, results, manual fees, report/PDF export and
    role-restricted access remain unverified.

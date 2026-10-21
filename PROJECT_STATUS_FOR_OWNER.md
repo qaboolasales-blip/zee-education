@@ -33,30 +33,35 @@ password is still unrotated.
   behavioural tests (`ProvisioningIdempotencyTest`) covering DB rejection of
   duplicate keys, duplicate school-code refusal and the completed-school re-provision
   no-op.
-- Package (build 9, 2026-10-21, built from annotated tag `v0.1.0-pre`): `build-package.ps1`
+- Package (build 10, 2026-10-21): first shipped-code change since build 5 — the
+  root-route post-login redirect-loop fix found by the live smoke (commit `77739b6…`,
+  `git describe` = `v0.1.0-pre-2-g77739b6`): `build-package.ps1`
   verifier **35 checks, 0 failures, 0
-  warnings** on the build tree; clean extraction proven byte-identical to staging
-  (matching recursive tree hash, 1,308 files); shipped `tools/verify-package.php`
-  re-run inside the extracted ZIP: **35/35**.
-  ZIP SHA-256 `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`
-  (4,107,274 bytes; `package-manifest.json` records `git_tag: v0.1.0-pre` + commit
-  `b1267df…`; supersedes build 8 (`b249281c…`, kept as `*.zip.bak-20261021-075532`) and
-  builds 7/6/5 (`11fb712e…` / `d1f3df4f…` / `b0cd78a6…`,
-  kept as `*.zip.bak-20261020-183756` / `-093116` / `-085852`); builds 6-8 were
-  documentation-only corrections (licence-limitation wording, changelog/doc10
-  clarifications, control-plane table count 14 → 21). Builds 4/3/2/1 kept as
-  `*.zip.bak-20261020-083633` / `-052205` / `-025056` / `*.zip.bak-20261019-224837`).
+  warnings** on the build tree and again inside the extracted ZIP;
+  ZIP SHA-256 `c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`
+  (4,107,754 bytes; `package-manifest.json` records commit `77739b6…` + `git_tag: null`,
+  with 0 "no Git tag" claims in any shipped text; supersedes build 9
+  (`46f5a487…`, kept as `*.zip.bak-20261021-094201`) and
+  builds 8/7/6 (`b249281c…` / `11fb712e…` / `d1f3df4f…`, kept as `*.zip.bak-20261021-075532` /
+  `-20261020-183756` / `-093116`); build 5 `b0cd78a6…` as `*.zip.bak-20261020-085852`;
+  builds 4/3/2/1 kept as `*.zip.bak-20261020-083633` / `-052205` / `-025056` /
+  `*.zip.bak-20261019-224837`).
   No `.env`, no private keys, no hosting account id, no pilot test data shipped.
+  Suites before build: backend **169/687** (from fresh empty CI-harness DBs), frontend 816/816.
 - Licences, billing invoices/payments, QR school invites and the Super Admin billing API
   are built, documented (`backend/docs/api/billing-api.md`, also shipped to buyers as
   `documentation/11-billing-api.md`) and covered by tests.
 
 ## 3. What is built but not verified yet
 
-- The current package has **not been deployed**. Build 5 was produced and verified
-  locally; no live host was touched in this pass and neither production database was
-  read or written (both local databases were migrated only). The smoke checklist is in
-  `release/RELEASE_NOTES_v0.1.0.md` ("Before you sell this").
+- ~~The current package has **not been deployed**.~~ **Deployed 2026-10-21:** build 9 was
+  deployed to the live Hostinger account (backups taken first, migrations applied,
+  licence issued), its smoke found the S1 post-login redirect loop, and **build 10 —
+  carrying the fix — is live now and passed the full smoke** (all five roles land on
+  their approved surfaces, student create proven with SQL cleanup, control plane
+  untouched). Full evidence: `PILOT_DEPLOYMENT_REPORT.md`. Still genuinely unverified:
+  attendance write (defect LB-2, open), the row-by-row role matrices (G6/G7/G8), the
+  pixel gate (G3b) and backup/restore owner sign-off (G9/G10).
 - The 6 new licence migrations have never run against a live database (nor has
   migration `2026-10-20_000016`, the provisioning idempotency guard — both are
   covered only by local test databases).

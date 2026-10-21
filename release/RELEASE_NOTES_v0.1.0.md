@@ -1,9 +1,9 @@
 # Zee Education v0.1.0 — Release Notes
 
-**Build date:** 2026-10-21 (build 9; rebuilds build 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
+**Build date:** 2026-10-21 (build 10; rebuilds build 9 of 2026-10-21, builds 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
 **Package:** `Zee_Education_v0.1.0_Hostinger_Installer.zip`
-**Commit:** `b1267dfba2ac22b8de2aec9ba913e4e8d9ad179f` (tag `v0.1.0-pre`)
-**SHA-256:** `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`
+**Commit:** `77739b6b221b321502c9511adb36ecff8cde8366` (2 commits past tag `v0.1.0-pre`, which still points at build 9's `b1267df…`; manifest records `git_tag: null`)
+**SHA-256:** `c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`
 (verify with `sha256sum` against `SHA256SUMS.txt`, then run `php tools/verify-package.php`)
 **Release type:** PRE-RELEASE — tagged **`v0.1.0-pre`** (pre-release tag, not a stable release)
 **Installation mode:** Platform Owner / Super Admin control plane

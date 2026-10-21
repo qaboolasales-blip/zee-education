@@ -7,24 +7,28 @@
 - Node: v24.17.0, npm 12.0.2
 - Frontend UI lock: PASS (3/3 reference files unchanged)
 - Frontend tests: PASS (816/816 — see "Frontend blocker resolution" below for the earlier failure)
-- Backend phpunit: PASS (**164 tests, 673 assertions, 0 skipped, 0 failures** — current;
-  earlier phases recorded 62/145, 69/175, 150/603, 155/621 and 161/653 in their own
-  sections below)
-- Package (build 9, 2026-10-21): built from annotated tag **`v0.1.0-pre`** (commit
-  `b1267dfba2ac22b8de2aec9ba913e4e8d9ad179f`); build-package.ps1 verifier 35/35 clean on
-  build tree; clean extraction byte-identical (1,308 files, matching recursive tree hash);
-  shipped `tools/verify-package.php` re-run inside the extracted ZIP: 35/35; ZIP
-  SHA-256 `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`
-  (build 8's `b249281c81269432950c644669ba3635f56e05b287366dc1835840db784098ab` superseded,
-  kept as `*.zip.bak-20261021-075532`; build 7 kept as `*.zip.bak-20261020-183756`;
-  builds 6/5/4/3/2 kept as `*.zip.bak-20261020-093116` / `-085852` / `-083633` / `-052205` /
-  `-025056`; build 1 as `*.zip.bak-20261019-224837`). Builds 6-8 were documentation-only
-  successors to build 5 (licence-limitation correction, changelog/doc10 clarifications,
-  control-plane table-count fix 14 → 21); build 9 is the tag round (shipped tag statements +
-  `package-manifest.json` now records `git_tag: v0.1.0-pre` instead of `null`).
+- Backend phpunit: PASS (**169 tests, 687 assertions, 0 skipped, 0 failures** — current;
+  earlier phases recorded 62/145, 69/175, 150/603, 155/621, 161/653 and 164/673 in their
+  own sections below; +5 tests = `HomeLandingTest`, the regression guard for the
+  post-login redirect loop found by the 2026-10-21 live smoke)
+- Package (build 10, 2026-10-21): first shipped-code change since build 5 — the root-route
+  redirect-loop fix (commit `77739b6b221b321502c9511adb36ecff8cde8366`; `git describe` =
+  `v0.1.0-pre-2-g77739b6`, so the manifest records `git_tag: null` — the annotated tag
+  `v0.1.0-pre` still points at build 9's commit `b1267df…`, and a scan of every shipped
+  `.txt/.md/.html` found 0 "no Git tag" claims); build-package.ps1 verifier 35/35 clean on
+  build tree and inside the extracted ZIP; ZIP SHA-256
+  `c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`
+  (build 9's `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c` superseded,
+  kept as `*.zip.bak-20261021-094201`; build 8 as `*.zip.bak-20261021-075532`;
+  build 7 as `*.zip.bak-20261020-183756`; builds 6/5/4/3/2 as `*.zip.bak-20261020-093116` /
+  `-085852` / `-083633` / `-052205` / `-025056`; build 1 as `*.zip.bak-20261019-224837`).
+  Builds 6-9 were documentation/tag-only successors to build 5. **Build 10 is deployed to
+  live Hostinger and passed the full live re-smoke** (see `PILOT_DEPLOYMENT_REPORT.md`:
+  all five roles land on their approved surface, licence Active, student write verified
+  with SQL cleanup, control plane untouched).
 
 ## Git commit hash
-0ee7a23
+77739b6 (build-10 head; tag `v0.1.0-pre` at `b1267df`, 2 commits back)
 
 ## Test/build/migration commands and results
 - php vendor/bin/phpunit --no-coverage: 62 tests, 145 assertions, 1 skipped, 0 failures
@@ -389,20 +393,26 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   Superseded the same day by **build 6** (`d1f3df4ff6fd44b3b43fee19a4c69c2f328db518f0ad1210b11c10090228361f`,
   4,106,477 bytes) — a shipped-`CHANGELOG.md`-only correction (the "no activation
   mechanism" limitation line was false since the licensing system shipped; rewritten
-  to "payment is manual, no gateway, no phone-home"), by **build 7**
-  (`11fb712e29afb937eb81d944c74e5b4f568ae854a0d0a33a0a23134e1484527f`, 4,106,913 bytes)
-  which records that correction in the changelog and clarifies
-  `documentation/10-license-and-support.md` ("no online activation" ≠ no licensing),
-  and by the current **build 9**
-  (`46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`, 4,107,274 bytes)
-  which records the new annotated tag `v0.1.0-pre` in `package-manifest.json` (was
-  hardcoded `null`) and updates the shipped tag-honesty statements (README_FIRST,
-  CHANGELOG, doc10, index.html). Build 8 (`b249281c…`, 4,107,190 bytes) had fixed the
-  stale control-plane table count (14 → 21) in `database/README.md`
-  and `documentation/03-first-run-setup.md` (verified against the live control DB:
-  21 tables; school DB remains 22). No shipped code changed across builds 5-9; all
-  build-5 test/probe results carry over. Builds 6/7/8 kept as
-  `*.zip.bak-20261020-093116` / `*.zip.bak-20261020-183756` / `*.zip.bak-20261021-075532`.
+   to "payment is manual, no gateway, no phone-home"), by **build 7**
+   (`11fb712e29afb937eb81d944c74e5b4f568ae854a0d0a33a0a23134e1484527f`, 4,106,913 bytes)
+   which records that correction in the changelog and clarifies
+   `documentation/10-license-and-support.md` ("no online activation" != no licensing),
+   by **build 9**
+   (`46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`, 4,107,274 bytes)
+   which records the new annotated tag `v0.1.0-pre` in `package-manifest.json` (was
+   hardcoded `null`) and updates the shipped tag-honesty statements (README_FIRST,
+   CHANGELOG, doc10, index.html), and finally by the current **build 10**
+   (`c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`, 4,107,754 bytes,
+   commit `77739b6`) — the first shipped-code change since build 5: the root-route
+   post-login redirect-loop fix (LB-1), deployed to live Hostinger the same day.
+   Build 8 (`b249281c…`, 4,107,190 bytes) had fixed the
+   stale control-plane table count (14 → 21) in `database/README.md`
+   and `documentation/03-first-run-setup.md` (verified against the live control DB:
+   21 tables; school DB remains 22). No shipped code changed across builds 5-9; all
+   build-5 test/probe results carry over (build 10 adds its own suite results:
+   backend 169/687). Builds 6/7/8/9 kept as
+   `*.zip.bak-20261020-093116` / `*.zip.bak-20261020-183756` / `*.zip.bak-20261021-075532` /
+   `*.zip.bak-20261021-094201`.
 - RB-7 **closed** (residuals tracked only as SC-2 `tokenRandomize` + SC-6 CSP — both
   shipped-documented hardening limitations, neither pilot-blocking); records updated
   across `quality/docs/*`, `ops/release-gates.md` (G5 evidence now 39/39, ships in
@@ -410,16 +420,22 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   `.github/workflows/ci.yml` (counts 164/671), `backend/kilocode-status.md`.
 
 ### Still BLOCKED — what did not happen this phase
-- **No live smoke test of the rebuilt package.** This phase ran locally; no deployment was
-  touched, no live endpoint was hit, neither production database was verified. Per the
-  release rule, `FINAL_RELEASE_STATUS` stays `BLOCKED` until a live smoke passes and both
-  databases are verified clean.
-- Role smoke tests still never executed (no owner-approved role accounts).
+- ~~**No live smoke test of the rebuilt package.**~~ **Closed 2026-10-21:** build 9 was
+  deployed to live Hostinger (backups first), the smoke found the S1 post-login redirect
+  loop (LB-1), and **build 10 with the fix is deployed and passed the full live smoke**
+  (all five roles land correctly, licence Active, student write verified with SQL cleanup,
+  control plane untouched). Evidence: `PILOT_DEPLOYMENT_REPORT.md`. `FINAL_RELEASE_STATUS`
+  stays `BLOCKED` for the remaining reasons below.
+- ~~Role smoke tests still never executed.~~ **Closed 2026-10-21 (live):** all five roles
+  signed in on production and their landings/denials were verified. What remains open is
+  the row-by-row role-permission matrix run (G6) and attendance write (defect LB-2, open).
 - QA matrices T-1..T-24 (isolation behaviour) and T-25..T-27 (licence expiry on a live
   school) never executed row-by-row — the evidence bars for gates G7/G8.
 - ~~No Git tag~~ — **closed 2026-10-21**: the tree was committed and pushed to
   `github.com/qaboolasales-blip/zee-education`, annotated tag **`v0.1.0-pre`** (commit
   `b1267df…`) was pushed, and build 9 was rebuilt from that tag so
   `package-manifest.json` records `"git_tag": "v0.1.0-pre"` (build 8 recorded `null`).
-  The tag is a pre-release tag, not a stable-release tag.
+  The tag is a pre-release tag, not a stable-release tag. (Build 10 was cut 2 commits
+  later, so its manifest records `git_tag: null` again — the tag still exists, and a
+  shipped-text scan found 0 "no Git tag" claims.)
 - Exposed SSH password still not rotated by the owner.

@@ -58,9 +58,11 @@
 The 2026-10-17 table is history; this section states each blocker's current truth.
 Evidence: `backend/FINAL_RELEASE_AND_PILOT_REPORT.md`, `ops/release-gates.md`
 (re-evaluated same day), backend suite **164/673** (161/653 before the build-5
-CSRF round), frontend **816/816**, package verifier **35/35** (current artifact:
+CSRF round), frontend **816/816**, package verifier **35/35** (current artefact:
 **build 9**, `46f5a487…` — tagged `v0.1.0-pre`; builds 6-9 were doc/tag-only successors to build 5;
 SHA/size/verification block in `release/PACKAGE_BUILD_REPORT.md` §17g).
+*(Superseded 2026-10-21: current artefact **build 10**, `c31ad281…`, backend **169/687** —
+see the live-smoke section at the bottom of this file.)*
 
 | ID | State 2026-10-20 | Evidence |
 |----|-------------------|----------|
@@ -95,3 +97,25 @@ RB-7, plus the owner-decision gates (G9/G10) and CI pin (G1/G2) tracked in
   security round and again after the build-5 CSRF round — suite now
   **164/671**, with the write calls carrying CSRF tokens via
   `CsrfTokenTrait::withCsrf()`).
+
+---
+
+## Live-smoke evaluation 2026-10-21 (build 9 → build 10, Hostinger)
+
+Live deployment smoke of the tagged build 9 on the production Hostinger account,
+then of build 10 after the S1 finding below was fixed. Artefact: **build 10**,
+`c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`,
+commit `77739b6`; suites re-run from fresh empty CI-harness databases:
+backend **169/687**, frontend **816/816**; verifier 35/35 build tree + extracted ZIP.
+Full smoke evidence: `PILOT_DEPLOYMENT_REPORT.md` (section "Live smoke pass 2026-10-21").
+
+| ID | Severity | State | Item / evidence |
+|----|----------|-------|-----------------|
+| LB-1 | S1 (pilot-blocking) | **CLOSED 2026-10-21, build 10, live-verified** | Infinite post-login redirect loop for every non-Super-Admin role: `Home::index` sent signed-in school users to `/login`, while Shield's `redirects['login']=null` sends authenticated visitors of `/login` back to the site root - `/` <-> `/login` forever (5-hop chain captured live with build 9; pre-existing since before build 9  -  old and new `Home.php` md5 identical  -  so every deployed build carried it). Fix: authed superadmin -> `/portal`, authed staff with linked school -> `/school`, any other authed user -> `/setup` (approved display-only placeholder); anonymous behaviour unchanged; invariant "authed never redirected to /login" is now code-commented and pinned by `HomeLandingTest` (5 tests/14 assertions). Live re-smoke on build 10: School Admin -> `/school` 200, Teacher -> `/school` 200, Parent -> `/setup` 200, Student -> `/setup` 200, Super Admin -> `/portal` 200, anonymous `/` -> 302 `/login`. |
+| LB-2 | S3 (open, pre-pilot) | **OPEN** | `POST /api/school/attendance` always fails `500` on a baseline school: `SchoolRecordService::markAttendance()` inserts only `student_id`/`attendance_date`/`status`/timestamps, but the schema (`2026-10-18_100004_create_attendance.php`) requires NOT NULL FK `academic_session_id`, NOT NULL FK `class_id` and NOT NULL `recorded_by`, and `docs/attendance-api.md` documents exactly those scope/actor fields  -  the live FK error (`attendance_academic_session_id_foreign`) was captured in `writable/logs`. Any real fix must resolve the current academic session, the student's class and the signed-in actor, which first needs academic-structure provisioning (no approved flow creates `academic_sessions`/`classes` rows yet)  -  so it must NOT be papered over with seeded fake rows. Not user-reachable today: no frontend code calls `api/school/attendance` (repo-wide grep = 0 hits) and no approved UI control is bound to it; `AttendanceTest` only checks file/doc existence, which is why the suite never caught this. Note for the record: the 2026-10-19 claim "Production evidence: write API 5/5" in `PILOT_DEPLOYMENT_REPORT.md` is **not reproducible for attendance** on 2026-10-21  -  student create, staff create and fees paths remain green, attendance write does not. |
+| LB-3 | S4 (observation) | open | Live responses carry `x-frame-options`, `x-content-type-options`, `x-permitted-cross-domain-policies: none`, `referrer-policy`, CSP `upgrade-insecure-requests`; no `Strict-Transport-Security` header is set by the application (TLS is terminated by the host). Not claimed as a defect anywhere in the gate set  -  recorded so no future report overstates the header inventory. |
+
+**Live-smoke verdict 2026-10-21:** the S1 loop (LB-1) is closed with live evidence.
+Remaining NO-GO drivers are unchanged: RB-2/RB-3 live matrices (G6/G7/G8), G3b pixel
+gate, G9/G10 owner sign-offs, SSH-password rotation (owner), third-party buyer test,
+plus LB-2 as a pre-pilot fix item.

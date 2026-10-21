@@ -13,12 +13,37 @@ It is **not** marked READY because the repository is **not** at
 > Section 17b describes **BUILD 5 (2026-10-20)**, now superseded.
 > Section 17c describes **BUILD 6 (2026-10-20)**, now superseded.
 > Section 17d describes **BUILD 7 (2026-10-20)**, now superseded.
-> The current artefact is **BUILD 9 (2026-10-21)**; its figures are in section 17g.
+> The current artefact is **BUILD 10 (2026-10-21)**; its figures are in section 17h.
+> Section 17g describes **BUILD 9 (2026-10-21)**, now superseded.
 > Section 17e describes **BUILD 8 (2026-10-20)**, now superseded.
 
 ---
 
-## 17g. BUILD 9 — 2026-10-21 (current)
+## 17h. BUILD 10 — 2026-10-21 (current)
+
+First shipped-code change since build 5: the post-login redirect-loop fix found by
+the live smoke of build 9 on Hostinger. `Home::index` used to send every signed-in
+non-Super-Admin user to `/login`, while Shield sends authenticated visitors of
+`/login` back to the configured redirect (the site root) — an infinite
+`/` ↔ `/login` loop that trapped School Admin, Teacher, Parent and Student after
+sign-in. The fix lands each authenticated case on a real approved surface
+(`/portal`, `/school`, or `/setup`) and never names `/login` as the destination for
+an authenticated user; `tests/Feature/HomeLandingTest.php` locks the contract
+(four role branches + no-login-for-authed + anonymous path).
+
+| Item | Value |
+|---|---|
+| ZIP name | `Zee_Education_v0.1.0_Hostinger_Installer.zip` |
+| Git commit | `77739b6b221b321502c9511adb36ecff8cde8366` (branch `main`, 2 commits past tag `v0.1.0-pre` — `git describe` = `v0.1.0-pre-2-g77739b6`; manifest records `git_tag: null` because no tag points AT HEAD, and the shipped text contains **0** "no Git tag" claims, verified by scan of every shipped `.txt/.md/.html`) |
+| ZIP size | 4,107,754 bytes (3.92 MB) |
+| ZIP files | 1,308 |
+| **ZIP SHA-256** | `c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8` |
+| Build 9 kept as | `Zee_Education_v0.1.0_Hostinger_Installer.zip.bak-20261021-094201` (`46f5a487…`) |
+| Verification | build-package.ps1 verifier **35/0** on build tree and again inside the extracted ZIP; `SHA256SUMS.txt` matches live hash |
+| Tests | backend `OK (169 tests, 687 assertions)` — 164 → 169 with the new `HomeLandingTest` (5 tests/14 assertions), re-validated from fresh empty `zee_ci`/`zee_ci_school` databases on the CI recipe; frontend `816/816` |
+| Deployment | **Live on Hostinger 2026-10-21**: extracted to `Zee_Education_v0.1.0_b10/`, live `.env` + writable state carried over, migrations Shield/Settings/App all no-op (0 non-AppSchool pending), `public_html` symlink flipped from build 9's tree (kept on disk for instant rollback); full live re-smoke PASS — see `PILOT_DEPLOYMENT_REPORT.md` |
+
+## 17g. BUILD 9 — 2026-10-21 (superseded by build 10)
 
 Tagged rebuild cut **from the annotated tag `v0.1.0-pre`** (commit `b1267df…`): the
 tag round changed no application code — only the shipped honesty statements about
