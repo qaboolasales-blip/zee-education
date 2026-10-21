@@ -95,10 +95,11 @@ Contact your provider and send:
 
 ## Version 0.1.0 — important honesty note
 
-This build is a **pre-release**, not a tagged release:
+This build is a **pre-release**:
 
-- there is **no Git tag** behind it
-- the working tree was **not fully committed** when it was packaged
+- it is tagged `v0.1.0-pre` — a pre-release tag, **not** a stable-release tag
+- the working tree is committed and pushed to GitHub; the tag points at the exact
+  source commit the package was built from
 
 Treat it as an early build. Back up thoroughly, test on a copy, and expect to refine the
 process with your provider. `release/PACKAGE_BUILD_REPORT.md` in the build workspace records

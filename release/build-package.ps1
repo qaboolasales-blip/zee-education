@@ -152,13 +152,17 @@ $commit   = $null
 try { $commit = (git -C $Root rev-parse HEAD 2>$null) } catch { $commit = $null }
 if (-not $commit) { $commit = $null }
 
+$gitTag = $null
+try { $gitTag = (git -C $Root tag --points-at HEAD 2>$null | Where-Object { $_ } | Select-Object -First 1) } catch { $gitTag = $null }
+if (-not $gitTag) { $gitTag = $null }
+
 $manifest = [ordered]@{
     note         = 'Source manifest of the packaged tree. Paths are relative to Zee_Education_v0.1.0/. file_count and total_bytes include this file.'
     version      = '0.1.0'
     release_type = 'pre-release'
     build_date   = (Get-Date -Format 'yyyy-MM-dd')
     git_commit   = $commit
-    git_tag      = $null
+    git_tag      = $gitTag
     file_count   = $files.Count
     total_bytes  = $bytes
     surfaces     = @('Super Admin portal (/portal)', 'School dashboard (/school)', 'Mobile PWA (/m)', 'Installer (/install)')

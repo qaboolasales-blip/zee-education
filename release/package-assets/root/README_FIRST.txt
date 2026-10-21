@@ -3,7 +3,8 @@
  Hostinger / shared-hosting installer package
 ========================================================================
 
-PRE-RELEASE BUILD. There is no Git tag behind this package. Read
+PRE-RELEASE BUILD. This package is tagged v0.1.0-pre (a pre-release tag, not a
+stable-release tag). Read
 CHANGELOG.md and the "honesty note" in documentation/10 before deploying
 to real users.
 

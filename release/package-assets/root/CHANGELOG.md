@@ -11,9 +11,9 @@ This project uses semantic versioning.
 
 ### Honesty note for this build
 
-This is a **pre-release**. There is **no Git tag** for it, and the working
-tree was **not fully committed** when the package was produced. Treat it as
-an early build for a controlled pilot, not as a stable tagged release.
+This is a **pre-release**. It is tagged `v0.1.0-pre` — a pre-release tag, **not** a
+stable-release tag — and the source tree is committed and pushed to GitHub. Treat it
+as an early build for a controlled pilot, not as a stable release.
 
 This package was **built and verified locally but has not yet been deployed.**
 The 2026-10-18 package is superseded; see the sections below for what changed.
@@ -244,7 +244,8 @@ The 2026-10-18 package is superseded; see the sections below for what changed.
   `HttpOnly` session cookies as defence in depth.
 - No `Content-Security-Policy` header is emitted; the views rely on inline
   scripts, so enabling CSP requires per-view nonces first.
-- No Git tag; the deployment is not reproducible from a tagged commit.
+- Tagged `v0.1.0-pre` (a pre-release tag): the deployment is reproducible from that
+  commit, but it is not a stable-release tag.
 - Backups are manual or cron-based; no built-in scheduled backup UI.
 - Licence activation and billing are **implemented** (licence plans, school
   licences, invoices, recorded payments, Super Admin billing API) but
