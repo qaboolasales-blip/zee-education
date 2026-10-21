@@ -4,7 +4,7 @@
 - Microtask: **C-C-02** (Batch C)
 - Created: 2026-10-17
 - Purpose: prove that a newly provisioned school truly gets its **own dedicated database** (ADR-001) — separate credentials, separate migration history, separate backups, and **no cross-school schema/data reuse** — rather than a shared `tenant_id` store.
-- Status: **Checklist (planned execution).** No provisioning logic/second school exists yet, so these are run in the batch where a synthetic school can actually be provisioned. Each step names an objective, query-able check.
+- Status: **Checklist (planned execution).** ~~No provisioning logic/second school exists yet~~ **Updated 2026-10-20:** provisioning logic shipped 2026-10-18+ (`SchoolProvisioningService`, `AdminApi::provision`, plus tests), and two synthetic schools were provisioned into separate local databases during the package test (`release/PACKAGE_BUILD_REPORT.md` §7), with privilege-layer denial proven on live Hostinger (`ERROR 1142` both directions, same section). This checklist still has **no row-by-row execution record** for DB-01..DB-18; each step names an objective, query-able check.
 
 ## 1. Separate database & credentials
 
@@ -66,11 +66,11 @@
 
 - Control-plane schema is **metadata only**: `schools` (identity/lifecycle/branding/timezone/currency/locale — no learner data), `school_domains`, `provisioning_jobs`, `platform_audit_events`. No student/attendance/fee/`tenant_id` shared table exists → **DB-09/DB-10 already satisfied at schema level**.
 - `provisioning_jobs.target_database` (VARCHAR) is where the dedicated DB name is recorded; `error_message` holds sanitized failure detail (no credential column).
-- The actual **creation** of a distinct DB + separate credentials is application logic that does not exist yet (no provisioning library). So DB-01..DB-08, DB-11..DB-18 are **planned** checks.
+- The actual **creation** of a distinct DB + separate credentials ~~is application logic that does not exist yet (no provisioning library)~~ **exists since 2026-10-18** (`SchoolProvisioningService`): on shared hosting the host pre-creates the database (the app never runs `CREATE DATABASE` — see `documentation/02`), and the service verifies it through the dedicated school connection. So DB-01..DB-08, DB-11..DB-18 are **planned** checks with partial indirect evidence (package provisioning test), not executed rows.
 
 ## 8. Execution status vs exit gate
 
-- **Runtime execution: BLOCKED (planned)** — no provisioning logic / second school to provision yet (ties to `ops/release-gates.md` G7, and the Batch C exit gate *"a synthetic school can be provisioned into a separate local database safely"*).
+- **Runtime execution: BLOCKED (planned)** — ~~no provisioning logic / second school to provision yet~~ provisioning exists since 2026-10-18 and synthetic schools were provisioned locally during the package test, but **this checklist's rows still have no execution record** (ties to `ops/release-gates.md` G7, and the Batch C exit gate *"a synthetic school can be provisioned into a separate local database safely"*).
 - **Schema-level checks already verified (real):** DB-09 and DB-10 hold — the control plane contains **no** school-local/`tenant_id`-shared table, satisfying the exit-gate item *"no school-local student table exists in the control-plane database."*
 - Nothing else is claimed as passing.
 

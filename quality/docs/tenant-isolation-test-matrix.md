@@ -4,6 +4,14 @@
 - Microtask: **C-01.2** (Batch A)
 - Created: 2026-10-17
 - Status: **Planned checks.** Isolation cannot be executed yet: there is no school provisioning, no auth and no migrations (`backend/app/Database/Migrations`, `app/Models`, `app/Filters` are empty — see `quality/docs/current-state-audit.md` §2.2). This matrix defines exactly what Batch B (C-10.2) must execute once a second school and authentication exist.
+- **Update 2026-10-20:** the original reason above is obsolete — provisioning, auth and
+  migrations all exist now, and isolation was proven on a real Hostinger deployment at
+  the **privilege layer** (0 school-local tables in the control plane, 0 control-plane
+  tables in a school DB, `ERROR 1142` both directions) plus green automated cross-school
+  tests (`backend/FINAL_RELEASE_AND_PILOT_REPORT.md`). **However, the T-1..T-24 rows in
+  this matrix have still not been executed row-by-row and no execution record has been
+  written.** Gate G7 in `ops/release-gates.md` therefore remains NO-GO until this matrix
+  runs against live accounts and its results are recorded in a copy of §6-style checklist.
 
 ## 0. The isolation control being tested
 

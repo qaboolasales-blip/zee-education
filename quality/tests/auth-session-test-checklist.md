@@ -40,10 +40,10 @@
 
 | ID | Case | Steps | Expected |
 |----|------|-------|----------|
-| SF-01 | ID regenerated on login | Capture pre-login session cookie; log in | Post-login session id **differs** from pre-login id (fixation defeated) |
-| SF-02 | Pre-login cookie rejected after login | Replay the pre-login session id post-login | Not accepted as an authenticated session |
+| SF-01 | ID regenerated on login | Capture pre-login session cookie; log in | Post-login session id **differs** from pre-login id (fixation defeated) — ✅ 2026-10-20 live (probe H1: A=598ca445… → B=ccce256f…) |
+| SF-02 | Pre-login cookie rejected after login | Replay the pre-login session id post-login | Not accepted as an authenticated session — ✅ 2026-10-20 live (probe H2: old id → 302 to login, never 200) |
 | SF-03 | Auto-rotation | Hold a session across `timeToUpdate` (config = 300s) | Session id rotates; session stays valid (config already sets 300s) |
-| SF-04 | Old id invalid after rotation | Use the pre-rotation session id | Rejected (or treated as anonymous), not a parallel authenticated session |
+| SF-04 | Old id invalid after rotation | Use the pre-rotation session id | Rejected (or treated as anonymous), not a parallel authenticated session — ⚠ auto-rotation uses `regenerateDestroy=false`, old record persists until GC (MB-2); **login-time destroy is verified under SF-02** |
 | SF-05 | Cookie flags | Read `Set-Cookie` for the session cookie | `HttpOnly` (config `Cookie::$httponly=true`), `SameSite=Lax` (config), and `Secure=true` in production (see B-C-04: currently `secure=false`) |
 | SF-06 | Cookie scope | Inspect session cookie Path/Domain | Minimal scope; not superflously broad |
 
@@ -68,9 +68,16 @@
 
 ## 6. State-change protection / CSRF (SEC-3, ties to B-C-04)
 
+*(2026-10-20 update — CSRF is now ENABLED globally: `Filters.php` `$globals['before']`
+carries `'csrf' => ['except' => ['api/admin/billing*']]` (billing keeps route-level
+`api_csrf` for its JSON contract). CS-01 is live-verified both on billing (RT-6)
+and globally (probe `I1`/`I3`, 39/39; suite 164/671 green with the filter on).
+CS-02/CS-03 remain defined-not-directly-tested; `regenerate=true` behaviour is
+framework-guaranteed. Login CSRF (LO-04) enforced: token-less `POST /login` → 403.)*
+
 | ID | Case | Steps | Expected |
 |----|------|-------|----------|
-| CS-01 | CSRF enforced on mutations | POST/PUT/DELETE to a state-changing `<EP>` without a valid CSRF token | **403** once CSRF is enabled (today `Filters::$globals.before` has `csrf` commented out — see B-C-04 SC-2) |
+| CS-01 | CSRF enforced on mutations | POST/PUT/DELETE to a state-changing `<EP>` without a valid CSRF token | **403** — enforced globally since the 2026-10-20 build-5 round (was: `csrf` commented out, billing-only `api_csrf`) |
 | CS-02 | Token per-session | Use a CSRF token from another session | Rejected |
 | CS-03 | Token rotation | Submit twice with the same token | Regeneration enforced (`Security::$regenerate=true`) prevents replay |
 
@@ -82,5 +89,5 @@
 
 ## 8. Note on existing session config (informational, verified)
 
-`Config/Session.php` (read 2026-10-17) already sets: `FileHandler` driver, `expiration=7200`, `timeToUpdate=300`, `regenerateDestroy=false`. `regenerateDestroy=false` means auto-rotation does **not** destroy the old session record (GC will). For strong fixation defense, SF-01/SF-04 require the **login** action to explicitly regenerate (and destroy) the id — an application-level responsibility that does not exist yet.
+`Config/Session.php` (read 2026-10-17) already sets: `FileHandler` driver, `expiration=7200`, `timeToUpdate=300`, `regenerateDestroy=false`. `regenerateDestroy=false` means auto-rotation does **not** destroy the old session record (GC will). For strong fixation defense, SF-01/SF-04 require the **login** action to explicitly regenerate (and destroy) the id — **provided by Shield**: `SessionAuth::startLogin()` calls `session()->regenerate(true)` (vendor shield `Authenticators/Session.php:719-721`), guarded by `ENVIRONMENT !== 'testing'` (phpunit skips it — hence live verification). Live-verified 2026-10-20 by the probe `H` block (`security-runtime-review.md` RT-8): new id on login, pre-auth id rejected, new id authenticated.
 

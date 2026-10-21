@@ -1,0 +1,32 @@
+# Root safety ignores (backend/, frontend/ have their own .gitignore)
+
+# Environment & secrets — never commit
+.env
+.env.*
+!.env.example
+!.env.*.example
+role_accounts_credentials.txt
+probe_secrets.json
+
+# Release binaries & staging (rebuild with release/build-package.ps1)
+release/staging/
+release/*.zip
+release/*.zip.bak-*
+*.zip.bak-*
+
+# Local DB dumps — never commit
+release/backups/*.sql
+*.sql.bak
+
+# Dependencies (backend/vendor, frontend/node_modules also covered locally)
+node_modules/
+
+# Runtime files
+backend/writable/install.lock
+*.log
+php_errors.log
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store

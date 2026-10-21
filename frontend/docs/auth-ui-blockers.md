@@ -10,6 +10,28 @@ invent it, and exactly what an owner decision would need to cover.
 Evidence source: `agents/opencode/reference_ui/` — SHA-256 verified unchanged,
 see `docs/reference-ui-audit.md` and `npm run test:ui-lock`.
 
+## Contract status (updated 2026-10-18, second pass)
+
+KiloCode published a real authentication contract. The endpoints and the
+credential scheme now exist — but **no request field names, no JSON response
+bodies, and no approved UI controls**. So the blockers below are now *UI*
+blockers on top of *contracted* endpoints, not contract blockers:
+
+| Capability | Endpoint | Contract | UI control |
+|---|---|---|---|
+| Login | `GET/POST /login` | published | **BLK-01** |
+| Logout | `GET /logout` | published | **BLK-03** |
+| Register | `GET/POST /register` | published | none in any reference |
+| Forgot / reset | `GET/POST /forgot`, `/reset-password` | published | none in any reference |
+| Refresh | — | **not contracted** | n/a |
+| Role vocabulary | — | **published** (`role-permission-policy.md`, seeded into `auth_groups`) | **BLK-04** — the browser still cannot read the role |
+| Server-side enforcement | — | **published** (`RoleFilter`, `RolePolicy`) | **BLK-02** — no 403 screen |
+| Per-endpoint permission map | — | **not published** | n/a |
+
+Full transcription and the exact unblock requirements are in
+`frontend/core/auth/contracts/pending-auth-contract.js` and
+`frontend/docs/auth-contract-review.md`.
+
 ---
 
 ## BLK-01 — No sign-in screen, and no expired-session screen
@@ -30,8 +52,32 @@ renders a toast:
 The copy even says the sign-in page *will* open — it does not exist. The School
 Dashboard and Super Admin references contain no login surface whatsoever.
 
-**Why I did not fix it.** A credential form is a new screen with new controls,
-new copy and new states. Its absence is also why `SessionState.UNAUTHENTICATED`
+**Contract status — CHANGED 2026-10-18.** KiloCode added a "Batch B:
+Authentication Endpoints" section to `backend/docs/api/openapi-v0.md` and
+published `docs/auth-endpoints.md` + `docs/authentication-design.md`. The
+endpoint now exists:
+
+| Endpoint | Method | Auth | Success | Failure |
+|---|---|---|---|---|
+| `/login` | GET/POST | None (public) | 302 redirect to configured redirect | 200 with validation errors |
+| `/logout` | GET | Required | 302 redirect to login | — |
+| `/register` | GET/POST | None (configurable) | — | — |
+| `/forgot` | GET/POST | None | — | — |
+| `/reset-password` | GET/POST | None (token-based) | — | — |
+
+The credential scheme is defined: **form-based login via CodeIgniter Shield
+Session authenticator**; the server sets the session cookie as part of the 302
+that `/login` returns on success. No bearer token, no `Authorization` header,
+no client-side storage. `docs/authentication-design.md` confirms the library
+(`codeigniter4/shield` ^1.2, MIT, Session authenticator) and lists "Implement
+custom policies for the 5 role types" as a NEXT STEP, not as done work.
+
+**What is STILL missing, and why.** The endpoint exists but the contract
+publishes **no request field names** ("Authenticates with valid credentials"
+never names the form fields) and **no JSON response body** — success is a
+redirect, not a payload. So no field may be modelled. And there is still no
+approved UI control: a credential form is a new screen with new controls, new
+copy and new states. Its absence is also why `SessionState.UNAUTHENTICATED`
 and `SessionState.SESSION_EXPIRED` both declare `screen: null` and fall back to
 the existing `#toast` (`core/auth/session-state.js`).
 
@@ -71,8 +117,14 @@ returns no match. The closest elements are inert:
 | `Connect another school` button | Mobile Preview | `notice('QR ya manual setup se school switch karein')` — a toast, not a logout |
 | System Settings toggles | Super Admin | `this.classList.toggle('off')` — local demo state only |
 
-**Why I did not fix it.** A logout control is a new interactive element. It
-would also need an approved confirmation treatment, which does not exist.
+**Contract status — CHANGED 2026-10-18.** The `/logout` endpoint is now
+published (GET, auth required, 302 redirect to login) and the scheme is a
+server-side Shield session cookie, so a client call is possible. The frontend
+already drops its own session locally in `core/auth/session-state.js`; what is
+still missing is (a) the idempotency and server-side revocation semantics, which
+the contract states only as "Logout current session", and (b) any approved UI
+control. A logout control is a new interactive element and would also need an
+approved confirmation treatment, which does not exist.
 
 **Owner decision needed.** Approve a logout entry point (avatar menu, Profile
 screen row, or Settings row), its confirmation behaviour, and its copy.
@@ -224,9 +276,9 @@ before any parser is written.
 
 | ID | Blocker | Type | Owner |
 |---|---|---|---|
-| BLK-01 | No sign-in / expired-session screen | UI | UI owner |
+| BLK-01 | No sign-in / expired-session screen (endpoint now published) | UI | UI owner |
 | BLK-02 | No forbidden-role screen | UI | UI owner |
-| BLK-03 | No logout control | UI | UI owner |
+| BLK-03 | No logout control (endpoint now published) | UI | UI owner |
 | BLK-04 | No identity endpoint; role selector is preview-only | Contract + UI | KiloCode + UI owner |
 | BLK-05 | No password/OTP entry affordance | UI | UI owner |
 | BLK-06 | No rate-limit/lockout presentation | UI | UI owner |
@@ -236,4 +288,7 @@ before any parser is written.
 
 **Net effect.** Zero UI elements were added. Every state the frontend can
 observe today resolves to either an already-approved screen (`Connect`), an
-already-approved channel (`#toast`), or a recorded blocker.
+already-approved channel (`#toast`), or a recorded blocker. The endpoints now
+exist in the contract, but the frontend still refuses to model request fields
+or response bodies that the contract does not publish, and still refuses to
+bind any of them to a control that the references do not provide.

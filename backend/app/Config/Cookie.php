@@ -53,8 +53,19 @@ class Cookie extends BaseConfig
      * --------------------------------------------------------------------------
      *
      * Cookie will only be set if a secure HTTPS connection exists.
+     *
+     * Driven by the `cookie.secure` environment variable (SC-4): default
+     * `false` for local HTTP development; set `cookie.secure = true` in the
+     * production `.env` once HTTPS is terminated.
      */
     public bool $secure = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->secure = filter_var(env('cookie.secure', false), FILTER_VALIDATE_BOOL);
+    }
 
     /**
      * --------------------------------------------------------------------------

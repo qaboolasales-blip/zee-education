@@ -68,3 +68,40 @@ Pass criterion: after the sequence, exactly **one** school row and **one** dedic
 - **Runtime synthetic-failure test: BLOCKED (planned).** No provisioning library/endpoint exists to run SC-1..SC-6. Ties to `ops/release-gates.md` G7 and the Batch C exit gate *"a retry cannot silently create inconsistent duplicate data."*
 - Nothing in §4 is claimed as passing; it is the exact scenario to execute later.
 
+## 6. R-2 closure (2026-10-20, later session)
+
+R-2 is **closed at the schema level**. Migration
+`2026-10-20_000016_add_provisioning_jobs_idempotency_key.php` adds a nullable
+`idempotency_key VARCHAR(191)` with UNIQUE index
+`uq_provisioning_jobs_idempotency_key`, applied via explicit `ALTER TABLE`
+(the CREATE-TABLE-TIME unique-next-to-AUTO_INCREMENT quirk noted in
+migrations 000009/000010 is avoided; 000007 proved ALTER-time unique works
+on this MySQL build).
+
+Design choices, deliberately departing from rec #2 as written:
+
+- **`target_database` stays non-unique.** One school database legitimately
+  accumulates many job rows over time (install today, migrate on every
+  release), so a unique on the database name would forbid normal history.
+  Uniqueness belongs to the caller-supplied key (rec #1's `idempotency_key`
+  option), which is exactly what was implemented.
+- **Multiple NULL keys remain possible** (MySQL permits repeated NULLs in a
+  UNIQUE index), so keyless placeholder rows are not blocked while any
+  duplicated key is rejected by the database itself (error 1062).
+
+Behavioural evidence (`backend/tests/Feature/ProvisioningIdempotencyTest`,
+5 tests / 18 assertions, green inside the full 155-test suite):
+
+- column + unique index exist and report `Non_unique = 0`
+- a second insert with the same key raises MySQL "Duplicate" and exactly one
+  row survives
+- two rows without a key both insert
+- duplicate `school_code` POST returns `409 That school code is already in
+  use` and exactly one school row remains (SC-2 at the entry point)
+- re-provisioning a `completed` school returns `Already provisioned` without
+  changing its state (SC-2 at the service level)
+
+SC-1/SC-3..SC-6 (synthetic failure injection against a real school database)
+remain **unexecuted** — they need a live dedicated-database environment and
+are still tied to gate G7 / the Batch C exit gate.
+

@@ -133,8 +133,10 @@ describe('logout state', () => {
     assert.equal(loggedOut.sessionPresent, false);
   });
 
-  it('performs no request on logout, because no endpoint is contracted', () => {
+  it('performs no request on logout, because the endpoint is not yet bound', () => {
     // The reducer is synchronous and pure: calling it cannot await or fetch.
+    // /logout is now published, but binding it to a control is a separate,
+    // unassigned task that needs an approved UI control (BLK-03).
     const result = reduceSession(INITIAL_SESSION, { type: 'logout' });
     assert.equal(typeof result.then, 'undefined');
     assert.equal(Object.isFrozen(result), true);
@@ -145,6 +147,17 @@ describe('logout state', () => {
     // by the auth UI blocker register, not invented here.
     assert.equal(bindingFor(SessionState.ANONYMOUS).blocker, null);
     assert.equal(bindingFor(SessionState.UNKNOWN).blocker, 'BLK-02');
+  });
+
+  it('still performs no request on logout even though /logout is now published', () => {
+    // The endpoint exists, but the contract publishes no request field names
+    // and no JSON response body for it, and no approved UI control exists
+    // (BLK-03). So the reducer's `logout` stays a local session drop, not a
+    // call to the endpoint. Binding /logout to a control is a separate,
+    // unassigned task.
+    const result = reduceSession(INITIAL_SESSION, { type: 'logout' });
+    assert.equal(typeof result.then, 'undefined');
+    assert.equal(Object.isFrozen(result), true);
   });
 });
 

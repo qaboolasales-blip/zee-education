@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2563eb">
+<title>Zee Education — Mobile App Preview</title>
+<style>
+:root{--brand:#2563eb;--brand2:#1e3a8a;--bg:#f3f5fa;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e8ecf3;--soft:#eef3ff;--shadow:0 12px 40px rgba(15,23,42,.08);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1020;--card:#141b2e;--ink:#eef2fb;--muted:#93a0b8;--line:#232c44;--soft:#1a2543;--shadow:0 12px 40px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--bg:#0b1020;--card:#141b2e;--ink:#eef2fb;--muted:#93a0b8;--line:#232c44;--soft:#1a2543;--shadow:0 12px 40px rgba(0,0,0,.4)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;background-image:radial-gradient(700px 400px at 8% -5%,color-mix(in srgb,var(--brand) 16%,transparent),transparent 70%),radial-gradient(600px 400px at 100% 100%,color-mix(in srgb,var(--brand2) 14%,transparent),transparent 70%)}
+button{font:inherit;color:inherit;cursor:pointer}
+.page{max-width:1280px;margin:auto;padding:36px 22px 48px}
+.intro{text-align:center;max-width:680px;margin:0 auto 32px}
+.eyebrow{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);background:var(--soft);padding:6px 12px;border-radius:99px}
+.intro h1{font-size:clamp(26px,4vw,40px);letter-spacing:-.03em;margin:14px 0 8px;line-height:1.1}
+.intro p{color:var(--muted);font-size:14px;line-height:1.6;margin:0}
+.stage{display:grid;grid-template-columns:300px 390px 300px;gap:32px;justify-content:center;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+.panel h2{font-size:15px;margin:0 0 4px;letter-spacing:-.01em}.sub{font-size:12px;color:var(--muted);line-height:1.5;margin:0}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.role{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 6px;font-size:12px;font-weight:600;color:var(--muted);transition:.2s}
+.role.on{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 18px color-mix(in srgb,var(--brand) 35%,transparent)}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+input{width:100%;margin-top:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:12px;font:13px inherit;outline:0}
+input:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.btn{width:100%;margin-top:10px;border:0;border-radius:12px;padding:12px;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(120deg,var(--brand),var(--brand2));box-shadow:0 8px 18px color-mix(in srgb,var(--brand) 30%,transparent);transition:transform .15s}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:var(--card);color:var(--brand);border:1px solid var(--brand);box-shadow:none}
+.bound{margin-top:16px;padding:12px;border-radius:12px;background:color-mix(in srgb,#f59e0b 14%,var(--card));color:var(--ink);font-size:12px;line-height:1.5;border:1px solid color-mix(in srgb,#f59e0b 30%,transparent)}
+.pw{text-align:center}.pw>b{font-size:13px}.pw>p{font-size:12px;color:var(--muted);margin:3px 0 14px}
+.phone{position:relative;width:390px;height:780px;border-radius:52px;padding:10px;background:linear-gradient(145deg,#2a3348,#0b1020);box-shadow:0 40px 80px rgba(15,23,42,.3),inset 0 0 0 2px #3b455e;text-align:left}
+.inner{position:relative;height:100%;border-radius:42px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:104px;height:28px;background:#000;border-radius:20px;z-index:5}
+.status{height:48px;padding:16px 26px 0;display:flex;justify-content:space-between;font-size:12px;font-weight:700;background:var(--card)}
+.head{padding:8px 18px 14px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+.school{display:flex;gap:10px;align-items:center}.mark{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;color:#fff;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+.school b{display:block;font-size:14px}.school span{font-size:11px;color:var(--muted)}
+.bell{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:15px;position:relative}
+.bell:after{content:'';position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:2px solid var(--bg)}
+.screen{flex:1;overflow:auto;padding:18px 16px 100px;scrollbar-width:none;animation:in .3s}.screen::-webkit-scrollbar{display:none}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.hello{font-size:12px;color:var(--muted);font-weight:500}.screen h3{font-size:24px;letter-spacing:-.03em;margin:4px 0 16px;line-height:1.15}
+.hero{position:relative;overflow:hidden;border-radius:22px;padding:18px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 14px 30px color-mix(in srgb,var(--brand) 32%,transparent)}
+.hero:before{content:'';position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero span{font-size:11px;opacity:.8;font-weight:600;letter-spacing:.05em;text-transform:uppercase}.hero strong{display:block;font-size:26px;margin:6px 0 2px;letter-spacing:-.03em}.hero small{font-size:12px;opacity:.85}
+.bar{height:6px;border-radius:9px;background:rgba(255,255,255,.25);margin-top:14px;overflow:hidden}.bar i{display:block;height:100%;background:#fff;border-radius:9px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px}.kpi span{font-size:11px;color:var(--muted);font-weight:600}.kpi b{display:block;font-size:18px;margin-top:5px;letter-spacing:-.02em}.kpi i{display:block;width:26px;height:4px;border-radius:4px;margin-top:8px;background:var(--k)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:10px}
+.card label{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.card strong{display:block;font-size:16px;margin:4px 0 2px}.card p{font-size:12px;color:var(--muted);margin:3px 0 0;line-height:1.5}
+.st{font-size:14px;font-weight:700;margin:20px 0 10px}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.quick button{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 2px;font-size:11px;font-weight:600;color:var(--muted);transition:.2s}
+.quick button:active,.tool:active{transform:scale(.96)}.quick i{display:grid;place-items:center;width:34px;height:34px;margin:0 auto 6px;border-radius:12px;background:var(--soft);color:var(--brand);font-style:normal;font-size:16px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tool{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;transition:.2s}
+.tool i{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;font-style:normal;font-size:16px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.tool b{display:block;font-size:13px;margin-top:10px}.tool span{font-size:11px;color:var(--muted);display:block;margin-top:3px;line-height:1.4}
+.back{border:0;background:none;color:var(--brand);font-weight:700;font-size:13px;padding:0 0 10px}
+.list{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--line);width:100%;border-left:0;border-right:0;border-top:0;background:none;text-align:left}.row:last-child{border-bottom:0}
+.row b{font-size:13px;display:block}.row span{font-size:11px;color:var(--muted)}
+.pill{font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;white-space:nowrap}
+.g{background:color-mix(in srgb,#10b981 16%,transparent);color:#059669}.w{background:color-mix(in srgb,#f59e0b 18%,transparent);color:#b45309}.n{background:var(--soft);color:var(--muted)}.r{background:color-mix(in srgb,#ef4444 16%,transparent);color:#dc2626}
+.prog{height:6px;border-radius:6px;background:var(--line);margin-top:8px;overflow:hidden}.prog i{display:block;height:100%;border-radius:6px;background:var(--c)}
+.nav{position:absolute;left:14px;right:14px;bottom:14px;height:66px;border-radius:24px;display:grid;grid-template-columns:repeat(5,1fr);padding:6px;background:color-mix(in srgb,var(--card) 82%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:0 12px 30px rgba(15,23,42,.18)}
+.nav button{border:0;background:none;border-radius:18px;display:grid;place-items:center;align-content:center;gap:2px;font-size:10px;font-weight:600;color:var(--muted);transition:.25s}
+.nav svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav button.on{background:var(--brand);color:#fff;box-shadow:0 6px 14px color-mix(in srgb,var(--brand) 35%,transparent)}
+.themes{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.theme{width:32px;height:32px;border-radius:50%;border:3px solid var(--card);box-shadow:0 0 0 1px var(--line)}
+.feat{display:flex;gap:11px;margin-top:14px}.feat i{flex:0 0 34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--soft);color:var(--brand);font-style:normal}.feat b{font-size:13px}.feat p{font-size:12px;color:var(--muted);margin:3px 0 0;line-height:1.5}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,90px);background:#0f172a;color:#fff;padding:12px 18px;border-radius:14px;font-size:13px;box-shadow:0 14px 34px rgba(0,0,0,.35);opacity:0;transition:.3s;z-index:99}.toast.show{opacity:1;transform:translate(-50%,0)}
+button:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 45%,white);outline-offset:2px}
+@media(max-width:1100px){.stage{grid-template-columns:300px 390px}.right{grid-column:span 2;max-width:700px;justify-self:center;width:100%}}
+@media(max-width:760px){.page{padding:22px 12px 36px}.stage{grid-template-columns:minmax(0,390px);gap:18px}.right{grid-column:auto}.pw{order:-1}.pw>b,.pw>p{display:none}.phone{width:100%;height:min(780px,calc(100svh - 70px));min-height:600px;border-radius:44px}.inner{border-radius:34px}.intro{margin-bottom:20px}}
+</style>
+/* Material 3 tonal navigation, insight cards and accessible interactions */
+<style id="m3-refresh">
+.mode{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:16px;display:grid;place-items:center}.head-actions{display:flex;gap:8px;align-items:center}.nav{background:color-mix(in srgb,var(--card) 88%,transparent);border-color:color-mix(in srgb,var(--line) 88%,transparent)}.nav button{position:relative;color:var(--muted)}.nav button.on{background:transparent;color:var(--brand);box-shadow:none}.nav button.on:before{content:'';position:absolute;z-index:-1;top:4px;left:14%;right:14%;height:30px;border-radius:99px;background:var(--soft)}.nav button.on svg{stroke-width:2.5}.insight{margin:12px 0 2px;padding:14px;border-radius:18px;background:var(--card);border:1px solid var(--line)}.insight-head{display:flex;justify-content:space-between;align-items:center}.insight-head b{font-size:12px}.insight-head span{font-size:10px;color:var(--muted)}.insight-bars{height:78px;display:flex;align-items:end;gap:8px;margin-top:10px;padding:0 4px;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to bottom,transparent 0 25px,color-mix(in srgb,var(--line) 80%,transparent) 26px 27px)}.insight-bars i{flex:1;max-width:34px;border-radius:9px 9px 2px 2px;background:var(--c);height:var(--h);box-shadow:0 5px 12px color-mix(in srgb,var(--c) 30%,transparent)}.insight-days{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-top:6px;color:var(--muted);font-size:9px}.qrart{width:84px;height:84px;display:grid;grid-template-columns:repeat(9,1fr);gap:2px;padding:7px;background:#fff;border-radius:12px;border:1px solid var(--line);margin:12px auto}.qrart i{background:#edf0f5;border-radius:1px}.qrart i.on{background:#162238}.connect-row{display:flex;align-items:center;gap:12px;margin-top:10px;padding:12px;border:1px solid var(--line);background:var(--card);border-radius:16px}.connect-row b{font-size:12px}.connect-row span{display:block;font-size:10px;color:var(--muted);margin-top:3px}@media(max-width:760px){.nav button.on:before{left:10%;right:10%}.mode{width:36px;height:36px}}
+</style></head><body>
+<main class="page">
+<section class="intro"><span class="eyebrow">Universal role-based mobile experience</span><h1>One Zee Education App for Everyone</h1><p>Parent, Student, Teacher aur School Admin ek hi app mein apne assigned role ke mutabiq secure school workspace use karte hain.</p></section>
+<section class="stage">
+<aside class="panel"><h2>Preview mobile role</h2><p class="sub">Role choose karein. Production mein server account se role identify karega — user khud admin role select nahin karega.</p>
+<div class="roles" id="roles"></div><hr>
+<h2>First-time school connection</h2><p class="sub">QR scan ya manual domain/code entry; phir user apne account se login karega.</p>
+<input id="domain" value="__ZEE_M_DOMAIN__" aria-label="School domain"><input id="code" value="__ZEE_M_CODE__" aria-label="School code">
+<button class="btn" onclick="connectSchool()">Connect school</button><button class="btn ghost" onclick="tab='Connect';render()">Open onboarding screen</button>
+<div class="bound"><b>V1 boundary:</b> Fees manually recorded hain. WhatsApp PDF sharing manual hai; SMS, online gateway aur automated WhatsApp connected nahin.</div></aside>
+<div class="pw"><b id="rl"></b><p id="hint"></p>
+<div class="phone"><div class="inner"><div class="island"></div><div class="status"><span>9:41</span><span>5G ▮▮▮</span></div>
+<div class="head"><div class="school"><div class="mark">H</div><div><b id="sn">__ZEE_M_SCHOOL__</b><span id="rs"></span></div></div><div class="head-actions"><button class="mode" aria-label="Toggle appearance" onclick="toggleMode()">◐</button><button class="bell" onclick="notice('No new notifications in this demo')">🔔</button></div></div>
+<div class="screen" id="screen"></div><nav class="nav" id="nav"></nav></div></div></div>
+<aside class="panel right"><h2>Included role areas</h2>
+<div class="feat"><i>♙</i><div><b>Parent</b><p>Linked children, attendance, fees, published results, homework, notices aur leave requests.</p></div></div>
+<div class="feat"><i>▤</i><div><b>Student</b><p>Own timetable, homework, attendance aur approved results.</p></div></div>
+<div class="feat"><i>✓</i><div><b>Teacher</b><p>Assigned-class attendance, homework aur draft marks. Admin approval zaroori.</p></div></div>
+<div class="feat"><i>♜</i><div><b>School Admin</b><p>Reviews, notices, operational summaries aur approved school tasks.</p></div></div>
+<hr><h2>School theme preview</h2><p class="sub">App theme school ke base color ko follow karegi.</p>
+<div class="themes" id="themes"></div></aside>
+</section></main><div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id),root=document.documentElement;let role='Parent',tab='Home',feat='',att={1:1};
+const notice=x=>{const t=$('toast');t.textContent=x;t.classList.add('show');clearTimeout(notice.t);notice.t=setTimeout(()=>t.classList.remove('show'),2400)};
+const ic=p=>`<svg viewBox="0 0 24 24"><path d="${p}"/></svg>`;
+const NAV=[['Home','Home','M3 11l9-8 9 8v10H3z'],['Attendance','Attendance','M5 13l4 4L19 7'],['Results','Results','M4 20V10M10 20V4M16 20v-8M22 20H2'],['Tasks','Tools','M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'],['Profile','Profile','M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 4-6 8-6s8 2 8 6']];
+$('nav').innerHTML=NAV.map(n=>`<button data-t="${n[0]}">${ic(n[2])}${n[1]}</button>`).join('');
+$('roles').innerHTML=['Parent','Student','Teacher','School Admin'].map((r,i)=>`<button class="role${i?'':' on'}" data-r="${r}">${r}</button>`).join('');
+$('themes').innerHTML=[['#92573a','#4c291b'],['#e11d48','#9f1239'],['#ea580c','#9a3412'],['#ca8a04','#854d0e'],['#059669','#065f46'],['#2563eb','#1e3a8a'],['#3b4fb8','#1e2a5e'],['#7c3aed','#4c1d95']].map(c=>`<button class="theme" aria-label="theme" style="background:linear-gradient(135deg,${c[0]},${c[1]})" data-a="${c[0]}" data-b="${c[1]}"></button>`).join('');
+const KP=__ZEE_M_KP__;
+return `<div class="hello">Grade 6 · Section A · Today</div><h3>${s?'Class attendance':'Attendance'}</h3><div class="list">${L.map((x,i)=>{const p=s?att[i]!==0:x[1]==='Present';return `<button class="row" ${s?`onclick="att[${i}]=att[${i}]===0?1:0;render()"`:''}><div><b>${x[0]}</b><span>${s?x[1]:'School day'}</span></div><span class="pill ${p?'g':'r'}">${p?'Present':'Absent'}</span></button>`}).join('')}</div>${s?'<p class="sub" style="margin-top:10px">Tap karke Present/Absent badlein.</p><button class="btn" onclick="notice(\'Attendance submitted in demo\')">Submit attendance</button>':''}`}
+function results(){const t=role==='Teacher',a=role==='School Admin';const S=[['Mathematics',88,'A','#3b82f6'],['Science',91,'A+','#10b981'],['English',84,'A','#8b5cf6']];
+return `<div class="hello">Mid-term · Grade 6-A</div><h3>${t?'Enter marks':a?'Results review':'Published results'}</h3>${hero(t?'Science quiz':'Overall',t?'Draft marks':'88% · A',t?'Awaiting admin review':'Published result')}<div class="list">${S.map(x=>`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><b>${x[0]}</b><b>${x[1]} / 100 · ${x[2]}</b></div><div class="prog" style="--c:${x[3]}"><i style="width:${x[1]}%"></i></div></div>`).join('')}</div>${t?'<button class="btn" onclick="notice(\'Draft marks saved in demo\')">Save draft for review</button>':a?'<button class="btn" onclick="notice(\'Result published in demo\')">Approve & publish</button>':'<button class="btn ghost" onclick="notice(\'Manual PDF-share preview\')">Share result PDF</button>'}`}
+const F={
+fees:['₨','Fees & receipts','Invoices & receipts','#f59e0b',['THIS MONTH','PKR 1.08M','Manual source tracking'],[['October tuition','PKR 12,500','Due','w'],['September tuition','Cash · RC-141','Paid','g'],['August tuition','Bank · 294012','Paid','g']],'View payment details','Online payment V1 mein enabled nahin'],
+timetable:['◷','Timetable','Today & weekly','#3b82f6',['TODAY · GRADE 6-A','4 classes','Wednesday'],[['Mathematics','Room 12','08:30','n'],['Science','Lab 2','09:20','n'],['English','Room 6','10:10','n'],['Urdu','Room 8','11:20','n']]],
+homework:['✎','Homework','Classwork & due dates','#8b5cf6',['DUE SOON','3 tasks','This week'],[['English essay draft','Due tomorrow','60%','w'],['Science worksheet 4','Due Friday','New','g'],['Math practice set','Due Monday','Open','n']],'Open homework'],
+notices:['▣','Notices','School announcements','#ec4899',['LATEST','3 notices','1 new'],[['Term test schedule','Calendar mein available','New','g'],['Parent-teacher meeting','Friday 10:00 AM','Event','n'],['School timing update','Winter schedule','Info','n']],'Create notice'],
+messages:['✉','Messages','Role-scoped chat','#d946ef',['INBOX','3 chats','1 unread'],[['Ms. Sara Ahmed','Ayan’s science work improving','12m','n'],['School Office','Fee receipt available','1h','n'],['Parent-teacher group','Meeting reminder','1d','n']],'New message'],
+leave:['☷','Leave requests','Apply & track','#10b981',['RECENT REQUEST','22 October','Medical appointment'],[['Request status','School Admin review','Pending','w'],['Leave balance','School policy','View','n']],'New leave request'],
+calendar:['▤','School calendar','Events & deadlines','#06b6d4',['OCTOBER 2026','2 events','Upcoming'],[['Parent-teacher meeting','23 Oct · 10:00 AM','Event','g'],['Term test','28 Oct · Grade 6','Exam','w']]],
+marks:['▤','Marks & results','Draft → approval','#8b5cf6',['SCIENCE QUIZ','24 / 28','Draft marks saved'],[['Teacher draft','Validated','Done','g'],['Admin review','Before publication','Review','w'],['Published result','Parents see approved only','Locked','n']],'Open results'],
+reports:['▥','Reports & print','PDF, Excel, CSV','#3b82f6',['OCTOBER ATTENDANCE','91.7%','Target 90%'],[['Attendance report','PDF / Excel','Ready','n'],['Result cards','Approved only','Ready','n'],['Fee report','Sources & dues','Ready','n']],'Create export','Exports role permission enforce karein'],
+students:['♙','Students','Search & manage','#3b82f6',['ACTIVE STUDENTS','__ZEE_M_STUDENT_COUNT__','real enrolment'],__ZEE_M_STUDENTS__,'Search students'],
+admissions:['＋','Admissions','Review applications','#8b5cf6',['NEW APPLICATIONS','__ZEE_M_ADMISSION_COUNT__','awaiting review'],__ZEE_M_ADMISSIONS__,'Review applications'],
+staff:['♟','Staff & HR','Records & attendance','#10b981',['STAFF PRESENT','86 / 92','4 leave pending'],[['Ms. Sara Ahmed','Science','Present','g'],['Mr. Saad Khan','Mathematics','Leave','w'],['Ms. Nadia Noor','Urdu','Present','g']],'Open directory'],
+settings:['⚙','School settings','Theme, code, forms','#64748b',['SCHOOL','Horizon','Connected'],[['School theme','Syncs dashboard & app','Blue','n'],['App connection','Domain & QR/manual code','Ready','n'],['Backup & audit','Infrastructure-controlled','Healthy','g']],'Open settings'],
+documents:['▧','Documents & cards','ID, forms & result card','#06b6d4',['SCHOOL DOCUMENTS','4 formats','Available when authorised'],[['Student ID card','School-branded design','Preview','n'],['Result card','Published results only','PDF','g'],['Admission form','Saved record print','Print','n']],'Open documents'] };
+F.attendanceTool=['✓','Class attendance','Assigned registers','#10b981'];
+const TL={Parent:['fees','timetable','homework','notices','leave','messages','calendar','documents'],Student:['timetable','homework','notices','calendar','messages','leave','documents'],Teacher:['timetable','attendanceTool','marks','homework','messages','notices','reports','leave'],'School Admin':['students','admissions','fees','staff','timetable','marks','notices','reports','documents','settings']};
+function tools(){return `<div class="hello">${role.toUpperCase()} TOOLS</div><h3>More school features</h3><div class="tools">${TL[role].map(k=>{const f=F[k];return `<button class="tool" style="--c:${f[3]}" onclick="op('${k}')"><i>${f[0]}</i><b>${f[1]}</b><span>${f[2]}</span></button>`}).join('')}</div>`}
+function featureScreen(){const f=F[feat];if(!f)return tools();const[,t,,,b,r,a,n]=f;return `<button class="back" onclick="go('Tasks')">‹ All tools</button><h3>${t}</h3>${hero(b[0],b[1],b[2])}${r?`<div class="list">${r.map(x=>`<div class="row"><div><b>${x[0]}</b><span>${x[1]}</span></div><span class="pill ${x[3]}">${x[2]}</span></div>`).join('')}</div>`:''}${a?`<button class="btn" onclick="notice('${n||t+' preview'}')">${a}</button>`:''}`}
+const profile=()=>`<div class="hello">ACCOUNT & CONNECTION</div><h3>My profile</h3>${card('Account',role==='Teacher'?'Ms. Sara Ahmed':'__ZEE_M_PROFILE__',role+' · __ZEE_M_SCHOOL__')}${card('School connection','__ZEE_M_DOMAIN__','School code: __ZEE_M_CODE__ · English / Roman Urdu / اردو')}${card('Theme','Synced with school','Base color school settings se aata hai. Dark/light preview top icon se change karein.')}<button class="btn ghost" onclick="notice('QR ya manual setup se school switch karein')">Connect another school</button>`;
+const connect=()=>`<div class="hello">WELCOME TO ZEE EDUCATION</div><h3>Connect your school</h3>${hero('Option 1','Scan QR code','School QR teachers, parents aur students ko deta hai.')}<div class="qrart">${Array.from({length:81},(_,i)=>`<i class="${[0,1,2,8,9,10,18,19,20,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70,73,76,78,79,80].includes(i)||i%7===0?'on':''}"></i>`).join('')}</div><button class="btn" onclick="notice('Camera scan ke liye real app/PWA permission chahiye')">▣ Scan QR code</button><div class="connect-row"><i style="font-size:22px;color:var(--brand)">⌕</i><div><b>Option 2 · Manual connection</b><span>__ZEE_M_DOMAIN__ · __ZEE_M_CODE__</span></div></div><button class="btn ghost" onclick="notice('School found — sign-in page khulega')">Continue to sign in</button><p class="sub" style="margin-top:12px">Production QR short-lived/revocable hota hai, permanent secret nahin.</p>`;
+const HINT={Parent:'View child updates, fees, results and notices.',Student:'View your timetable, homework and published results.',Teacher:'Take attendance and enter marks for assigned classes.','School Admin':'Review work, notices and school summaries.'};
+function toggleMode(){root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';notice(root.dataset.theme==='dark'?'Dark appearance enabled':'Light appearance enabled')}
+function render(){$('rl').textContent=role+' App · Mobile Preview';$('rs').textContent=role;$('hint').textContent=HINT[role];
+const v={Connect:connect,Attendance:attendance,Results:results,Tasks:tools,Feature:featureScreen,Profile:profile}[tab]||HOME[role];
+const s=$('screen');s.style.animation='none';s.offsetHeight;s.style.animation='';s.innerHTML=v();
+document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===(tab==='Feature'?'Tasks':tab)))}
+function go(t){tab=t;if(t!=='Feature')feat='';render();$('screen').scrollTop=0}
+function op(k){if(k==='attendanceTool')return go('Attendance');feat=k;tab='Feature';render()}
+function connectSchool(){const d=$('domain').value.trim(),c=$('code').value.trim();if(!d||!c)return notice('Please enter school domain and code');const n=d.split('.')[0].replace(/[-_]/g,' ').replace(/\b\w/g,x=>x.toUpperCase());$('sn').textContent=n;$('screen').previousElementSibling.querySelector('.mark').textContent=n[0];notice('Connected to '+n+' in this demo')}
+document.querySelectorAll('#roles button').forEach(b=>b.onclick=()=>{role=b.dataset.r;tab='Home';feat='';document.querySelectorAll('#roles button').forEach(x=>x.classList.toggle('on',x===b));render()});
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.t));
+document.querySelectorAll('.theme').forEach(b=>b.onclick=()=>{root.style.setProperty('--brand',b.dataset.a);root.style.setProperty('--brand2',b.dataset.b);notice('App theme preview updated')});
+render();
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+</script>
+</body></html>

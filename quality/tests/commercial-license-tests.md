@@ -23,3 +23,32 @@
 
 ## Status
 - Executed now: K-C-01 (real scan — no commercial hard-coded pricing; plan_code only). Design-reviewed: K-C-03/K-C-04 (invariants preserved). Blocked: K-C-02 (no renewal logic) + K-C-03/04 runtime. Reference UI unchanged (3/3). Nothing unexecuted is claimed passing.
+
+## Update 2026-10-20 (post billing/licence implementation)
+
+The "no renewal/licensing logic" state check in the header is now obsolete. What changed,
+and what this means for each microtask:
+
+- **Licensing/billing logic now exists:** `LicenseService` (hashed keys, key rotation on
+  renewal), `LicenseFilter` (blocks **writes only** on expiry), `BillingService` +
+  `BillingApi` (9 Super Admin routes: issue/invoice/pay/void/revoke/renew, audit row per
+  action), six new control-plane migrations. Covered by `LicenseEnforcementTest` (11
+  tests) and `BillingApiTest` (20 tests), both green in the suite (164/671 as of
+  the 2026-10-20 build-5 CSRF round — the licence/billing write tests now carry
+  CSRF tokens via `CsrfTokenTrait::withCsrf()`; 161/653 at the security round,
+  155/621 when this record was written).
+- **K-C-02 (renewal reminders): still BLOCKED — reason updated.** Renewal *itself* is
+  implemented, but the product has **no reminder/notification channel at all** (no email,
+  SMS or cron sender), so LR-01..LR-04 idempotency still has nothing to execute against.
+- **K-C-03 (expiry cannot destroy data): runtime evidence now exists at unit level.**
+  `LicenseEnforcementTest` proves expiry/suspension blocks writes without deleting,
+  hiding or export-blocking school data. The **T-25..T-27 behavioural rows have not been
+  executed on a live school** — gate G8 in `ops/release-gates.md` stays NO-GO until they
+  are recorded.
+- **K-C-04 (support access default-deny): partly structural now.** Learner-data endpoints
+  exist for school roles (`/api/school/*`), but **no control-plane route serves learner
+  data at all** — Super Admin structural default-deny holds by construction (no route to
+  break). The break-glass/elevation mechanism itself still does not exist, so audit-row
+  verification for elevation remains BLOCKED.
+- Reference UI still 3/3; no pricing is hard-coded anywhere (re-verified in the build
+  reports of 2026-10-19/20).

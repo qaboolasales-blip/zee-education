@@ -76,5 +76,62 @@ php -v
 php -m
 php -r "echo extension_loaded('intl') ? 'intl_OK' : 'intl_MISSING';"
 php -r "echo extension_loaded('mysqli') ? 'mysqli_OK' : 'mysqli_MISSING';"
-php -d extension=php_intl.dll -d extension=php_mysqli.dll backend/vendor/bin/phpunit -c backend/phpunit.dist.xml
+php -d extension=php_intl.dll -d extension=mysql backend/vendor/bin/phpunit -c backend/phpunit.dist.xml
 ```
+
+## Update 2026-10-20 — CI recipe validation and a `spark`/`testing` quirk
+
+The numbers above are the original 2026-10-17 audit (27 tests); the current suite is
+164 tests / 671 assertions (155/621 when this section was written, before
+`SecurityHeadersRuntimeTest` landed; 161/653 after the security round; +3
+`ConnectApiTest` in the build-5 CSRF round, green **with the global `csrf`
+filter enabled**). Two new environment facts were established while authoring
+`.github/workflows/ci.yml`:
+
+1. **`php spark` + `CI_ENVIRONMENT = testing` is fatal in CI4 4.7.5.**
+   `Config\AutoloadConfig::__construct()` branches on
+   `$_SERVER['CI_ENVIRONMENT'] === 'testing'` and then references `SUPPORTPATH`, which
+   is only defined by the PHPUnit bootstrap (`system/Test/bootstrap.php:67`) or
+   `system/util_bootstrap.php` — neither runs in `spark`, so boot dies with
+   `Undefined constant "CodeIgniter\Config\SUPPORTPATH"`. Workaround used by the CI
+   workflow (and by all local runs): keep `CI_ENVIRONMENT = development` in `.env` and
+   let PHPUnit force `testing` itself (`system/Test/bootstrap.php:28-29` overwrites
+   both `$_SERVER['CI_ENVIRONMENT']` and `ENVIRONMENT` before anything else). Database
+   targeting then relies on group choice, not environment: `spark` uses the default
+   group, phpunit uses `tests`.
+2. **A from-scratch backend run needs four inputs, in this order:** (a) two empty
+   databases with `utf8mb4_unicode_ci` (control/test + school), (b) `spark migrate -n
+   "CodeIgniter\Shield"` → `-n "CodeIgniter\Settings"` → `-n "App"` (never `--all`),
+   (c) `spark db:seed LicensePlansSeeder` (billing tests assert plan rows exist), and
+    (d) the `AppSchool` namespace applied to the *school* database — `spark` has no
+    schooldb-group concept, so the recipe points `database.default` at the school DB for
+    that one command. Validated 2026-10-20 from empty databases: `OK (155 tests, 621
+     assertions)` with control/test histories untouched; **re-run from fresh empty
+     `zee_ci`/`zee_ci_school` after the security round the same day: `OK (161 tests,
+     653 assertions)`** on the identical recipe (harness DBs dropped and `backend/.env`
+     restored afterwards); **re-run again in the build-5 CSRF round: `OK (164 tests,
+     671 assertions)`** from fresh empty harness DBs — confirming the +3
+     `ConnectApiTest` and the global-CSRF write-token retrofit need nothing beyond
+     migrations + `LicensePlansSeeder` (control-school history still 1 row after the
+     run; `backend/.env` restored byte-identical).
+
+3. **`TestResponse::getHeader()` does not exist and silently returns `null`.**
+   `CodeIgniter\Test\TestResponse::__call()` (system/Test/TestResponse.php:489) forwards
+   unknown methods to the response's DOM parser and returns `null` when the parser has
+   no such method — so `$result->getHeader('X')` looks like "header absent" while the
+   header is actually present on `$result->response()`. Cost a 4-test red run on the
+   harness (where the allowlist is non-empty and the expected value is non-null, unlike
+   the local dev `.env` where the bogus `null` matched the expected `null`). Read headers
+    via `$result->response()->getHeaderLine()` or `TestResponse::assertHeader()`.
+
+4. **`service('response')` is a singleton across feature-test requests.**
+   A later `$this->post()`/`$this->get()` overwrites the *same* Response instance
+   that an earlier `TestResponse` wraps — including its **status code** and body.
+   Cost showed up in the build-5 CSRF round while probing `ConnectApi` contracts
+   between calls: `$known->response()->getBody()` started returning the *later*
+   response's body (and a later 403 would retroactively relabel an earlier 200's
+   status). Rule: snapshot what you need (`getBody()`, `getHeaderLine()`,
+   `response()->getStatusCode()`) **immediately after** each call, before making
+   the next one. (`TestResponse` itself keeps its captured `body`/`status` from
+   construction time for direct assertions — the aliasing only bites when reading
+   back through `->response()` after subsequent requests.)

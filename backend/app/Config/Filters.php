@@ -34,6 +34,21 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'role'          => \App\Filters\RoleFilter::class,
+        'superadmin'    => \App\Filters\SuperAdminFilter::class,
+        'installlock'   => \App\Filters\InstallLockFilter::class,
+        'license'       => \App\Filters\LicenseFilter::class,
+        'api_csrf'      => \App\Filters\ApiCsrfFilter::class,
+        // Shield's own aliases are registered by its Registrar, but this file
+        // replaces the framework defaults, so they are declared explicitly.
+        'session'      => \CodeIgniter\Shield\Filters\SessionAuth::class,
+        'tokens'       => \CodeIgniter\Shield\Filters\TokenAuth::class,
+        'hmac'         => \CodeIgniter\Shield\Filters\HmacAuth::class,
+        'chain'        => \CodeIgniter\Shield\Filters\ChainAuth::class,
+        'auth-rates'   => \CodeIgniter\Shield\Filters\AuthRates::class,
+        'group'        => \CodeIgniter\Shield\Filters\GroupFilter::class,
+        'permission'   => \CodeIgniter\Shield\Filters\PermissionFilter::class,
+        'force-reset'  => \CodeIgniter\Shield\Filters\ForcePasswordResetFilter::class,
     ];
 
     /**
@@ -52,6 +67,12 @@ class Filters extends BaseFilters
     public array $required = [
         'before' => [
             'forcehttps', // Force Global Secure Requests
+            // CORS must run in `required` so preflights (OPTIONS +
+            // Access-Control-Request-Method) are answered even when no route
+            // matches that method - required filters run before routing.
+            // Deny-by-default + explicit allowlist only, never `*` (ADR-008,
+            // G5); Config\Cors rejects wildcard entries outright.
+            'cors',
             'pagecache',  // Web Page Caching
         ],
         'after' => [
@@ -60,6 +81,19 @@ class Filters extends BaseFilters
             'toolbar',     // Debug Toolbar
         ],
     ];
+
+    /**
+     * The debug toolbar collects the authenticated user on every request.
+     * That query needs the control-plane `settings` table, which does not exist
+     * before the first-run installer has created it. On a not-yet-installed
+     * application the toolbar is therefore removed so the installer can boot.
+     */
+    public function __construct()
+    {
+        if (! is_file(WRITEPATH . 'install.lock')) {
+            $this->required['after'] = array_values(array_diff($this->required['after'], ['toolbar']));
+        }
+    }
 
     /**
      * List of filter aliases that are always
@@ -73,12 +107,18 @@ class Filters extends BaseFilters
     public array $globals = [
         'before' => [
             // 'honeypot',
-            // 'csrf',
+            // Global CSRF (RB-7 closed 2026-10-20): every live form already
+            // carries csrf_field() (see quality/docs/csrf-client-audit.md).
+            // Billing is EXCEPTED so its route-level api_csrf filter keeps
+            // answering JSON 403 {error:csrf_required} instead of the
+            // framework's HTML error page - and to avoid double-verification
+            // (Security::verify() consumes the token).
+            'csrf' => ['except' => ['api/admin/billing*']],
             // 'invalidchars',
         ],
         'after' => [
             // 'honeypot',
-            // 'secureheaders',
+            'secureheaders', // X-Frame-Options / X-Content-Type-Options / ... (SC-3)
         ],
     ];
 
@@ -106,5 +146,11 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
+    // NOTE: the `license` filter is deliberately NOT registered here as a URI
+    // pattern. CodeIgniter collects pattern filters ahead of a route's own
+    // filters, which would make the licence check run BEFORE `session` - and a
+    // licence check with no signed-in user is a silent no-op. It is therefore
+    // applied explicitly in Config/Routes.php, inside the school route groups,
+    // after 'session' and 'role'. See Routes.php for the ordering comment.
     public array $filters = [];
 }

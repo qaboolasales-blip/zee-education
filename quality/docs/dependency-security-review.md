@@ -18,14 +18,14 @@ Consolidates `security-config-review.md` (B-C-04):
 
 | Control | Config present | Enforced now | Verdict |
 |---------|----------------|--------------|---------|
-| CORS allowlist / no wildcard | Yes (`Cors.php` deny-by-default, skips `*`, `supportsCredentials=false`) | Yes for `/health` (`HealthTest::testHealthNeverSendsWildcardCorsOrigin`) | **Strong** |
-| AuthN/AuthZ filter | **No** (`Filters::$filters=[]`) | No | **Gap** — open (G6) |
-| CSRF | Configured (cookie, regenerate) but filter **commented out** | No | **Gap** — enable on mutations |
-| Secure headers | Alias only, filter **commented out** | No | **Gap** — enable in prod |
+| CORS allowlist / no wildcard | Yes (`Cors.php` deny-by-default, skips `*`, `supportsCredentials=false`) | Yes — `cors` filter applied (`$required['before']`), runtime matrix **39/39** (final run, build-5 CSRF round; was 36/36 pre-round) + `SecurityHeadersRuntimeTest` (2026-10-20) | **Strong** |
+| AuthN/AuthZ filter | **2026-10-20: obsolete** — `session`/`role:*`/`superadmin`/`license` now bound to every authenticated route | Yes + negative tests; live role matrix pending accounts (G6) | OK pending G6 |
+| CSRF | Configured (session mode now; regenerate); **global filter enabled 2026-10-20** — `'csrf' => ['except' => ['api/admin/billing*']]` in `$globals['before']` | **Yes — global** — billing keeps `api_csrf` (JSON contract); probe `I1`/`I2`/`I3` 39/39, suite 164/671 green with the filter on | **Closed (2026-10-20 build-5 round)** — residual `tokenRandomize=false` (SC-2) |
+| Secure headers | Alias only → **enabled in `$globals['after']` (2026-10-20)** | Yes — five headers live-observed + feature tests | **Closed** |
 | Cookie `HttpOnly`/`SameSite` | Yes (true / Lax) | Yes | OK |
-| Cookie `Secure` | `false` | n/a | **Gap** — set true in prod |
-| Session expiry/rotation | 7200s / 300s | Yes (framework) | OK; login-time regen pending |
-| CSP | Configured, **not applied** | No | **Gap** — enable report-only→enforce |
+| Cookie `Secure` | from `cookie.secure` env (2026-10-20) | Yes — polarity live-verified; prod must set `true` | **Closed (mechanism)** |
+| Session expiry/rotation | 7200s / 300s | Yes (framework) | OK; login-time regen **live-verified 2026-10-20** (probe H1/H2) |
+| CSP | Configured, **not applied (deliberate)** | No | **Gap** — needs per-view nonces (SC-6; RB-7 itself closed 2026-10-20) |
 | Force HTTPS | `required.before` | Yes | OK |
 
 ## 3. Secrets & PII posture (real)
@@ -43,10 +43,10 @@ Consolidates `security-config-review.md` (B-C-04):
 
 ## 5. Prioritized gaps (carry into defect report M-C-05)
 
-1. **No server-side authN/authZ** (G6, never-waivable) — highest risk.
-2. **CSRF, secure-headers, CSP defined but not enabled**; `Cookie::$secure=false` — hardening actions before prod.
-3. **PATH-PHP missing `intl`** — env fix (use Laragon PHP); not a code defect.
-4. **No provisioning idempotency guard** (R-2) — close in logic before pilot.
+1. **Live authZ role matrix not executed** (G6, never-waivable) — highest risk; implementation + negative tests exist (2026-10-20).
+2. **CSP nonces + `tokenRandomize`** — remaining hardening actions before prod; global/login CSRF **closed 2026-10-20** (build-5 round, probe `I1`/`I2`/`I3` + suite 164/671), alongside the already-closed secure headers and `cookie.secure` mechanism (RB-7 fully closed; residuals = SC-6 + SC-2).
+3. **PATH-PHP missing `intl`** — env fix (use Laragon PHP); not a code defect. Addressed in CI by the pinned runtime (`.github/workflows/ci.yml`, G1/G2 pending first remote run).
+4. **No provisioning idempotency guard** (R-2) — **closed 2026-10-20** (RB-4: migration `2026-10-20_000016` + `ProvisioningIdempotencyTest`).
 5. `composer audit`/dependency CVE scan not yet run (needs network/CI).
 
 ## Status

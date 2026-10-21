@@ -1,0 +1,131 @@
+ZEE EDUCATION
+Commercial Product License
+Version 0.1.0
+========================================================================
+
+Copyright (c) Zee Education. All rights reserved.
+
+This is a COMMERCIAL, per-installation software product. It is not
+open-source and it is not free to redistribute.
+
+
+1. GRANT OF LICENCE
+------------------------------------------------------------------------
+
+Zee Education is licensed, not sold.
+
+Your licence permits you to:
+
+  * install and run ONE copy of this software for ONE school
+    (one school = one dedicated database);
+  * use it for that school's own internal purposes;
+  * receive updates and support for the period stated in your written
+    agreement with your provider.
+
+For every additional school you run, you must obtain an additional
+licence and give that school its own dedicated database, as described
+below.
+
+
+2. RESTRICTIONS
+------------------------------------------------------------------------
+
+You may NOT:
+
+  * redistribute, resell, sublicense, rent, lease or give this software
+    away, in whole or in part;
+  * share, publish or post this package, or any part of it, on any
+    marketplace, forum, file-sharing site or public repository;
+  * remove or alter the copyright notices, or the licence and support
+    files in the package;
+  * grant access to the software to anyone other than staff of the
+    licensed school who need it to operate that school;
+  * use one licence for more than one school;
+  * use the software as a hosted service for third parties;
+  * use the software to build a competing product for sale.
+
+Removing or hiding the licence/support files from a deployment voids the
+licence.
+
+
+3. ONE SCHOOL, ONE DATABASE (MANDATORY TECHNICAL RULE)
+------------------------------------------------------------------------
+
+Each licensed school must run on its own dedicated database.
+
+You may NOT:
+
+  * put two or more schools' data into a single shared database table
+    scoped only by a tenant or school id;
+  * merge one school's data into another school's database;
+  * move one school's data into the control-plane database.
+
+This rule protects each school's data and is a condition of the licence.
+
+The control-plane database holds school, installation and licence-billing
+records (plans, invoices, payments, invitations). It must never contain
+student, guardian, staff, attendance, result or fee tables.
+
+
+4. DATA OWNERSHIP
+------------------------------------------------------------------------
+
+All data belonging to a school belongs to that school.
+
+Expiry or termination of a licence may end support and updates. It may
+never delete, hide, disable, or block export of a school's data.
+
+
+5. LICENCE VALIDATION
+------------------------------------------------------------------------
+
+This product performs NO online licence validation and contains no
+activation mechanism. Licence records are held manually between you and
+your provider. There is no phone-home, no licence server and no
+third-party involvement.
+
+
+6. NO WARRANTY
+------------------------------------------------------------------------
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+
+The provider is not liable for data loss, lost profit, or any indirect
+damage arising from the use of this software. You are responsible for
+regular, tested backups.
+
+
+7. TERMINATION
+------------------------------------------------------------------------
+
+This licence ends automatically if you breach any clause above. On
+termination you must stop using the software. Data already stored must
+still be exportable to the licensed school.
+
+
+8. THIRD-PARTY COMPONENTS
+------------------------------------------------------------------------
+
+This package bundles third-party open-source components, each under its
+own licence. The most significant are:
+
+  CodeIgniter Framework 4  - MIT
+  CodeIgniter Shield      - MIT
+  CodeIgniter Settings    - MIT
+  Laminas Escaper         - BSD-3-Clause
+  PSR Log / Container     - MIT
+
+Their full licence texts are shipped inside  application/vendor/  and
+within each package's own files. Those components remain under their own
+licences and are not covered by the restrictions in clause 2, which apply
+to the Zee Education product code, installer and documentation.
+
+TRADEMARKS
+
+"Zee Education" and associated marks are trademarks. This licence grants no
+right to use them beyond describing the licensed use of the product.
+
+
+END OF LICENCE

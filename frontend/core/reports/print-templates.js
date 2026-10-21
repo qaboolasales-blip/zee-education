@@ -25,6 +25,8 @@
  * No DOM, no CSS, no rendering.
  */
 
+import { stripCommentsAndLiterals } from '../fees/payment-boundary.js';
+
 /** The four built-in templates, named exactly as both references name them. */
 export const BUILT_IN_TEMPLATES = Object.freeze([
   Object.freeze({ id: 'admission-form', name: 'Admission form' }),
@@ -138,16 +140,24 @@ export function canRenderTemplate(request = {}) {
  * one-line convenience that would silently replace the reference's pre-rendered
  * designs with generated ones, which is exactly the redesign J-O-02 forbids.
  *
+ * The scan is over *executable* tokens, so it needs no exemption: naming `.innerHTML`
+ * inside a regex literal — as another guard legitimately does — is invisible to it,
+ * while actually calling it is not. An earlier version scanned raw text and therefore
+ * flagged `core/hardening/ui-state-audit.js`, a different guard that names the same
+ * primitives. Naming a forbidden primitive is not the same as using it.
+ *
+ * State-surface names (`spinner`, `skeleton`, …) are deliberately **not** checked
+ * here: Batch M owns the UI-state audit, and overlapping the two lists would make each
+ * guard flag the other.
+ *
  * @param {Array<{ path: string, code: string }>} sources
  */
 export function assertNoPrintDesigner(sources) {
   const list = Array.isArray(sources) ? sources : [];
-  const DECLARATION_MODULES = ['core/reports/print-templates.js'];
-  const isDeclaration = (path) =>
-    DECLARATION_MODULES.some((module) => path.replace(/\\/g, '/').endsWith(module));
 
   const patterns = [
     { label: 'print stylesheet', pattern: /@media\s+print|@page\b|print-color-adjust/ },
+    { label: 'DOM element creation', pattern: /\bdocument\.createElement\s*\(/ },
     { label: 'template markup builder', pattern: /\.innerHTML|insertAdjacentHTML|document\.write/ },
     { label: 'print typography override', pattern: /@font-face|\bFontFace\b|document\.fonts/ },
     { label: 'print window', pattern: /\.print\(\)|window\.open\(/ },
@@ -156,9 +166,9 @@ export function assertNoPrintDesigner(sources) {
   const problems = [];
   for (const source of list) {
     if (!source || typeof source.code !== 'string') continue;
-    if (isDeclaration(source.path)) continue;
+    const executable = stripCommentsAndLiterals(source.code);
     for (const { label, pattern } of patterns) {
-      if (pattern.test(source.code)) problems.push(`${source.path}: ${label}`);
+      if (pattern.test(executable)) problems.push(`${source.path}: ${label}`);
     }
   }
 

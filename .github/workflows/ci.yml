@@ -1,0 +1,177 @@
+name: CI
+
+# Pinned-runtime test runner for the two release gates that can only close on
+# a remote runner:
+#   G1 - environment/toolchain pin (PHP 8.3 + required extensions + MySQL service)
+#   G2 - automated suite green on that pinned runtime (backend 164/671, frontend 816/816)
+#
+# Local runs remain the day-to-day signal; this workflow is the record that the
+# same commands pass on a reproducible runner. Neither job ships in the release
+# package (the builder copies application/, database/, documentation/, tools/
+# and the four root files only), so changing CI never invalidates a package
+# SHA-256.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend suite (PHP 8.3, MySQL 8)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: zee_ci
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=24
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pin PHP runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl, mysqli, pdo_mysql, mbstring, openssl, curl, dom, xml, fileinfo, gd, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Record pinned runtime (G1 evidence)
+        run: php -v && php -m && composer --version
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # Two ephemeral databases keep the plane split the product promises:
+      # zee_ci (control plane + phpunit's tests group) never contains
+      # school-local tables, and zee_ci_school holds only the AppSchool schema
+      # (mirrors the local zi_school_a topology). CI_ENVIRONMENT stays
+      # `development` exactly like a local backend/.env: setting it to
+      # `testing` breaks `spark` outright in CI4 4.7.5 (AutoloadConfig's
+      # testing branch needs SUPPORTPATH, which spark's boot never defines;
+      # phpunit forces `testing` itself in system/Test/bootstrap.php). The CORS
+      # allowlist is explicit (never `*`, ADR-008 / G1) and the encryption key
+      # is generated per run so no key ever lands in git.
+      - name: Create harness databases
+        run: |
+          php -r '$m = new mysqli("127.0.0.1", "root", "root"); foreach (["zee_ci", "zee_ci_school"] as $db) { if (!$m->query("CREATE DATABASE IF NOT EXISTS `$db` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")) { fwrite(STDERR, $m->error); exit(1); } } echo "databases ready\n";'
+
+      - name: Write .env for the test harness
+        working-directory: backend
+        run: |
+          {
+            echo "CI_ENVIRONMENT = development"
+            echo "app.baseURL = 'http://example.com/'"
+            echo "app.corsAllowedOrigins = 'https://ci.invalid'"
+            echo "app.corsAllowedMethods = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'"
+            echo "app.corsAllowedHeaders = 'Authorization,X-Requested-With,Content-Type,Accept,Origin'"
+            echo "app.corsSupportsCredentials = true"
+            echo "encryption.key = $(php -r 'echo bin2hex(random_bytes(32));')"
+            for group in default tests; do
+              echo "database.${group}.hostname = 127.0.0.1"
+              echo "database.${group}.database = zee_ci"
+              echo "database.${group}.username = root"
+              echo "database.${group}.password = root"
+              echo "database.${group}.DBDriver = MySQLi"
+              echo "database.${group}.DBPrefix ="
+              echo "database.${group}.port = 3306"
+              echo "database.${group}.charset = utf8mb4"
+              echo "database.${group}.DBCollat = utf8mb4_unicode_ci"
+            done
+            # schooldb.* is not a Database config group - the app reads these
+            # keys directly through env() (SchoolProvisioningService,
+            # CredentialVault, SchoolAccessService).
+            echo "schooldb.default.hostname = 127.0.0.1"
+            echo "schooldb.default.database = zee_ci_school"
+            echo "schooldb.default.username = root"
+            echo "schooldb.default.password = root"
+            echo "schooldb.default.port = 3306"
+            echo "ZEE_SCHOOL_DB_PREFIX = zi_school_"
+          } > .env
+          grep -E '^(CI_ENVIRONMENT|app\.corsAllowedOrigins|database\.default\.database|schooldb\.default\.database)' .env
+
+      # One namespace at a time, in this order - never `migrate --all`
+      # (documented in documentation/07-update-guide.md and 08-troubleshooting.md).
+      # `spark` runs on the default group, which this .env points at the
+      # ephemeral service database.
+      - name: Migrate schema into the test database
+        working-directory: backend
+        run: |
+          php spark migrate -n "CodeIgniter\Shield"
+          php spark migrate -n "CodeIgniter\Settings"
+          php spark migrate -n "App"
+          php spark migrate:status
+
+      - name: Seed commercial plan catalogue
+        working-directory: backend
+        run: php spark db:seed LicensePlansSeeder
+
+      # `spark` has no schooldb-group concept (the school connection is built
+      # from schooldb.* env keys by the app, not by Config\Database), so the
+      # school schema is applied by pointing the default group at the school
+      # database for one command, exactly as validated locally 2026-10-20
+      # (empty zee_ci_school -> 8 AppSchool migrations -> suite 164/671,
+      # re-validated from fresh empty DBs in the build-5 CSRF round).
+      - name: Apply school-local schema to the school database
+        working-directory: backend
+        run: |
+          sed -i 's/^database\.default\.database = zee_ci$/database.default.database = zee_ci_school/' .env
+          php spark migrate -n "AppSchool"
+          sed -i 's/^database\.default\.database = zee_ci_school$/database.default.database = zee_ci/' .env
+          grep '^database.default.database' .env
+
+      - name: Run backend suite
+        working-directory: backend
+        run: php vendor/bin/phpunit --no-coverage
+
+      - name: Upload PHPUnit logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-phpunit-logs
+          path: backend/build/logs
+          retention-days: 7
+
+  frontend:
+    name: Frontend gates (Node 24)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Record pinned runtime (G1 evidence)
+        run: node -v && npm -v
+
+      # package.json has no dependencies and no lockfile by design, so there is
+      # nothing to install: `npm run check` = UI reference lock (3/3) + all
+      # node:test files (816 assertions).
+      - name: UI lock + contract gates
+        run: npm run check

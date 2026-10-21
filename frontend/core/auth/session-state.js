@@ -3,29 +3,39 @@
  *
  * SCOPE — read this before using anything here.
  *
- * 1. There is NO published **authentication** contract. The published
- *    `backend/docs/api/openapi-v0.md` (v0.1.0) defines only the control-plane
- *    Batch A endpoints and states a future auth *policy*, with no auth
- *    endpoint, credential scheme or payload (see `pending-auth-contract.js`).
- *    This model therefore assumes no request/response payload.
+ * 1. A real authentication contract now exists (2026-10-18). KiloCode added a
+ *    "Batch B: Authentication Endpoints" section to
+ *    `backend/docs/api/openapi-v0.md` plus `docs/auth-endpoints.md` and
+ *    `docs/authentication-design.md`. The credential scheme is defined:
+ *    **form-based login via CodeIgniter Shield Session authenticator**; the
+ *    server sets the session cookie as part of the 302 that `/login` returns
+ *    on success. No bearer token, no `Authorization` header, no client-side
+ *    storage. See `core/auth/contracts/pending-auth-contract.js`.
  *
- *    The status semantics it DOES rely on are contract-backed:
+ *    The status semantics this module DOES rely on are contract-backed:
  *      401 = "Unauthenticated"
  *      403 = "Forbidden — valid auth but insufficient scope"
  *    The 401/403 split is stable; the exact codes for lockout, CSRF failure and
  *    token expiry are NOT yet contracted and must be revisited then.
  *
- * 2. There is NO session storage here, and none may be added until the contract
- *    is reviewed (B-O-02). This module holds no token, reads no `localStorage`,
- *    no `sessionStorage`, no `document.cookie` and no `IndexedDB`. `session` is
- *    a plain in-memory value the caller owns.
+ * 2. There is NO session storage here, and none may be added (B-O-02). This
+ *    module holds no token, reads no `localStorage`, no `sessionStorage`, no
+ *    `document.cookie` and no `IndexedDB`. `session` is a plain in-memory value
+ *    the caller owns. The published scheme requires no client-side storage at
+ *    all: the session lives in a server-side Shield cookie the browser sends
+ *    automatically with `credentials: 'same-origin'`.
  *
  * 3. Every state declares the approved hook it may use. Where the locked
  *    references provide no hook, `hook` is `null` and `blocker` names the
  *    recorded gap (B-O-06). Nothing here may create UI.
  *
- * 4. This module performs no network call. There is no login, logout or refresh
- *    request, because no such endpoint has been contracted (B-O-03).
+ * 4. This module performs no network call. It has no login, logout or refresh
+ *    request. `/login` and `/logout` are now published endpoints, but the
+ *    contract publishes no request field names and no JSON response body for
+ *    either (success is a redirect, not a payload), so binding them is a
+ *    separate unassigned task that also needs an approved UI control
+ *    (BLK-01, BLK-03). `logout` here therefore means "drop the session
+ *    locally", which is what the reducer does.
  */
 
 import { canOpen } from './role-guard.js';

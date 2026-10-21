@@ -118,15 +118,16 @@ describe('L-O-02 — selection stays in memory and clears on logout/switch', () 
   it('reuses Batch B\'s absolute storage ban instead of a second guard', () => {
     // Batch B forbids every storage primitive across core/**. A guard here would have
     // to name those primitives, which Batch B's absolute ban treats as a violation —
-    // so this module must not contain them, and does not.
-    const connectionSource = readFileSync(resolve(CORE_DIR, 'connection', 'connection.js'), 'utf8');
-    const contractSource = readFileSync(
-      resolve(CORE_DIR, 'connection', 'contracts', 'pending-connection-contract.js'),
-      'utf8',
-    );
-    for (const source of [connectionSource, contractSource]) {
-      assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB/);
+    // so the executable code must not contain them, and does not. (Comments are
+    // documentation and are stripped by the same scanner Batch B uses.)
+    const sources = listSourceFiles(resolve(CORE_DIR, 'connection')).map((file) => ({
+      path: file.replace(`${REPO_ROOT}\\`, '').replace(/\//g, '\\'),
+      code: readCode(file),
+    }));
+    for (const source of sources) {
+      assert.doesNotMatch(source.code, /localStorage|sessionStorage|indexedDB/, source.path);
     }
+    assert.ok(sources.length >= 5, 'expected the connection module to be scanned');
   });
 });
 
@@ -207,9 +208,14 @@ describe('L-O-01/L-O-03 — binding contract', () => {
 });
 
 describe('no invented connection contract', () => {
-  it('confirms nothing is authorized', () => {
+  it('confirms nothing is authorized, even though the code column now exists', () => {
+    // Migration 000007 (C-K-02) added `schools.school_code`, so the schema is
+    // published. That is NOT the same as a connection contract: the column has
+    // no published payload semantics and no endpoint. The summary records the
+    // schema separately so that fact cannot be lost.
     assert.equal(CONNECTION_INTEGRATION_AUTHORIZED, false);
-    assert.equal(describeConnectionBlock().schemaPublished, false);
+    assert.equal(describeConnectionBlock().schemaPublished, true);
+    assert.equal(describeConnectionBlock().integrationAuthorized, false);
   });
 
   it('covers every Batch L contract capability', () => {
@@ -238,7 +244,7 @@ describe('no invented connection contract', () => {
   it('lists the entities that must exist first', () => {
     assert.deepEqual(
       MISSING_CONNECTION_ENTITIES.map((e) => e.entity),
-      ['school_connection_sessions', 'qr_payloads'],
+      ['school_connection_sessions', 'qr_payloads', 'connect_endpoints'],
     );
   });
 });

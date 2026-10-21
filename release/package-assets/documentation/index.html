@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zee Education &mdash; Documentation</title>
+<style>
+ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f4f6f8;color:#1f2933;margin:0;padding:24px;line-height:1.6}
+ .wrap{max-width:860px;margin:0 auto}
+ h1{font-size:26px;margin:0 0 6px}
+ h2{font-size:18px;margin:28px 0 8px}
+ .card{background:#fff;border:1px solid #dfe3e8;border-radius:10px;padding:22px;margin-bottom:18px}
+ ul{padding-left:20px}
+ li{margin:6px 0}
+ a{color:#1f6feb}
+ code{background:#eef2f6;padding:1px 5px;border-radius:4px;font-size:13px}
+ .muted{color:#616e7c;font-size:14px}
+ .note{background:#fff6e5;border-left:4px solid #d98324;padding:10px 12px;font-size:14px}
+</style>
+</head>
+<body><div class="wrap">
+
+<div class="card">
+<h1>Zee Education Documentation</h1>
+<p class="muted">Version 0.1.0 &mdash; Hostinger / shared-hosting installer edition</p>
+<p>This documentation is <strong>self-contained and works completely offline</strong>. No
+internet connection, no CDN, no external fonts or scripts are required.</p>
+</div>
+
+<div class="card">
+<h2>Start here</h2>
+<ul>
+  <li><a href="01-requirements.md">01 &mdash; Requirements</a> &mdash; check before you buy hosting.</li>
+  <li><a href="02-hostinger-installation.md">02 &mdash; Hostinger installation</a> &mdash; step by step, from domain to uploaded files.</li>
+  <li><a href="03-first-run-setup.md">03 &mdash; First-run setup wizard</a> &mdash; the 3-step browser installer.</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Running the platform</h2>
+<ul>
+  <li><a href="04-super-admin-school-provisioning.md">04 &mdash; Super Admin: creating and provisioning a school</a></li>
+  <li><a href="05-school-admin-onboarding.md">05 &mdash; School Admin onboarding</a></li>
+  <li><a href="06-backup-restore.md">06 &mdash; Backup and restore</a></li>
+  <li><a href="07-update-guide.md">07 &mdash; Updating to a new version</a></li>
+  <li><a href="08-troubleshooting.md">08 &mdash; Troubleshooting</a></li>
+  <li><a href="09-security-and-privacy.md">09 &mdash; Security and privacy</a></li>
+          <li><a href="10-license-and-support.md">10 &mdash; Licence and support</a></li>
+          <li><a href="11-billing-api.md">11 &mdash; Billing API (Super Admin)</a> &mdash; how the provider records licence invoices, payments and renewals.</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>The one rule you must not break</h2>
+<div class="note">
+<strong>Every school must have its own separate database.</strong><br>
+The control plane holds school and installation records only. It must never hold
+students, guardians, staff, attendance, results or fee data. If anyone offers you a
+&ldquo;shared table with a tenant ID&rdquo; version of this product, it is not this product &mdash;
+do not accept it.
+</div>
+</div>
+
+<div class="card">
+<h2>What is included</h2>
+<ul>
+  <li>Super Admin control plane (schools, installations, commercial records, provisioning)</li>
+  <li>Per-school dedicated database with its own schema</li>
+  <li>First-run web installer with server preflight and automatic migrations</li>
+  <li>CodeIgniter Shield authentication (users, groups, sessions, login throttling)</li>
+  <li>Role filters for Super Admin and school-level access control</li>
+  <li>Health endpoint for monitoring</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>What is NOT included in this version</h2>
+<ul>
+  <li>SMS notifications</li>
+  <li>Online payment gateway</li>
+  <li>Unofficial / QR WhatsApp Web automation</li>
+  <li>Automated WhatsApp Business API</li>
+  <li>Native app-store packaging (iOS / Android)</li>
+</ul>
+<p class="muted">These are deliberate product decisions, not missing files.</p>
+</div>
+
+<div class="card">
+<p class="muted">
+Build 0.1.0 &middot; this is a <strong>pre-release</strong> build, not a tagged release &middot;
+see <code>CHANGELOG.md</code> in the package root.
+</p>
+</div>
+
+</div></body>
+</html>

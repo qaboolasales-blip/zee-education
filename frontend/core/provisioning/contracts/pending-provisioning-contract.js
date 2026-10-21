@@ -1,32 +1,30 @@
 /**
  * School-registry and provisioning contract dependency record.
- * Tasks: C-O-03 and C-O-04.
+ * Tasks: C-O-03 and C-O-04. Updated 2026-10-19 for the billing/connect rebuild.
  *
- * STATUS: BLOCKED for both API tasks.
+ * STATUS: backend PUBLISHED for registry, provisioning, QR and connection-code;
+ * frontend binding still NOT authorized (no client code, no owner-approved UI scope).
  *
- * What KiloCode has published so far:
- *   backend/docs/api/openapi-v0.md            v0.1.0 DRAFT — GET /health, GET /setup only
- *   backend/docs/control-plane-data-boundary.md  entity list + field rationale
- *   backend/docs/migration-plan.md            column definitions
- *   backend/app/Database/Migrations/*.php     4 implemented tables
+ * What the backend publishes now (all real, backend-tested, documented):
+ *   backend/docs/api/openapi-v0.md      39 application routes with guards
+ *   backend/docs/api/billing-api.md     Super Admin billing contract (guide 11 shipped)
+ *   backend/app/Config/Routes.php       GET/POST /api/admin/schools,
+ *                                       POST /admin/schools/provision,
+ *                                       POST /api/connect/resolve, GET /api/connect/verify,
+ *                                       POST /api/connect/invite, GET /connect/qr
+ *   backend/app/Models/                 SchoolsModel, AuditEventModel + SchoolLocal/*
+ *   backend/app/Database/Migrations/    16 files incl. licence/billing/invite tables
  *
- * What that DOES give the frontend: a real, verifiable SCHEMA to validate
+ * What that gives the frontend: real endpoints and a schema record to validate
  * against (see `../control-plane-schema.js`).
  *
- * What it does NOT give the frontend: a single ENDPOINT for school registry,
- * provisioning or QR payload. `backend/app/Config/Routes.php` still declares
- * exactly `GET /health`, `GET /setup` and `GET /`, and `backend/app/Models/` is
- * still empty. There is therefore nothing to bind, and nothing to parse.
- *
- * Consequently:
- *   - NO school-registry request or response payload is declared;
- *   - NO provisioning request or response payload is declared;
- *   - NO QR payload format, signature, expiry or revocation rule is declared;
- *   - NO 409 Conflict semantic is declared, so duplicate handling cannot be
- *     interpreted by the client.
- *
- * Every schema field below is pinned to `null` and
- * `assertNoInventedProvisioningSchemas()` fails the test suite if that changes.
+ * What it does NOT give the frontend: authorization to bind. No client code calls
+ * these endpoints, and camera/PWA scanning scope has not been owner-approved.
+ * Consequently this module still models NO payload shape:
+ *   - requestSchema / responseSchema stay pinned to `null` for every capability,
+ *     published or not — payload shapes live in the backend documents, and
+ *     inventing one here is the exact failure this module exists to prevent;
+ *   - `assertNoInventedProvisioningSchemas()` fails the suite if that changes.
  */
 
 /** Contract publication states. */
@@ -38,49 +36,57 @@ export const ProvisioningContractStatus = Object.freeze({
 
 export const EXPECTED_PROVISIONING_CONTRACT_DOC = 'backend/docs/api/openapi-v0.md';
 
-/** The published schema exists even though the published endpoints do not. */
+/** The published schema exists; the provisioning SURFACE is now published too. */
 export const PROVISIONING_SCHEMA_PUBLISHED = true;
-export const PROVISIONING_ENDPOINTS_PUBLISHED = false;
+export const PROVISIONING_ENDPOINTS_PUBLISHED = true;
 
 /**
- * Unverified observations about KiloCode's current implementation state.
+ * Current observations about the backend implementation state.
  * NOT contracts; nothing was modelled from them.
  */
 export const SOURCE_OBSERVATIONS = Object.freeze([
   Object.freeze({
     area: 'routes',
     observation:
-      'backend/app/Config/Routes.php declares only GET /health, GET /setup and GET /. No ' +
-      'school-registry, provisioning, QR or commercial route exists.',
+      'backend/app/Config/Routes.php declares the full 39-route control-plane surface: ' +
+      'health/setup/installer, school APIs, portal, connect (resolve/verify/invite/qr), ' +
+      'admin school registry + provision, and the Super Admin billing API.',
     contract: false,
   }),
   Object.freeze({
     area: 'models',
-    observation: 'backend/app/Models contains only .gitkeep — no model for any control-plane entity.',
+    observation:
+      'backend/app/Models contains AuditEventModel and SchoolsModel (control plane) plus a ' +
+      'SchoolLocal/ subdirectory for per-school models — the ADR-001 directory boundary.',
     contract: false,
   }),
   Object.freeze({
     area: 'schema',
     observation:
-      'Four tables are implemented: schools, school_domains, provisioning_jobs, ' +
-      'platform_audit_events. commercial_records and support_tickets are documented in the data ' +
-      'boundary but have no migration.',
+      'Sixteen control-plane migrations exist: schools, school_domains, provisioning_jobs, ' +
+      'platform_audit_events, platform roles seed, schools extensions, user_school_access, ' +
+      'and six licence/billing/invite tables (license_plans, school_licenses, ' +
+      'license_invoices, license_payments, school_db_credentials, school_invites).',
     contract: false,
   }),
   Object.freeze({
     area: 'isolation',
     observation:
-      'The data-boundary document confirms ADR-001: a dedicated database per school, and a shared ' +
-      'tenant_id table is explicitly NOT an acceptable substitute. There is no column for ' +
-      'isolation mode because it is a constant architectural rule.',
+      'The data-boundary document confirms ADR-001: a dedicated database per school, and a ' +
+      'shared tenant_id table is explicitly NOT an acceptable substitute. Proven at the ' +
+      'privilege layer on a live Hostinger deployment (ERROR 1142 both directions).',
     contract: false,
   }),
 ]);
 
 /**
+ * Capabilities the frontend may one day bind. `implemented: true` records that
+ * a real backend endpoint exists; it does NOT authorize client-side binding.
+ * `blocker` now names what still blocks the FRONTEND binding.
+ *
  * @type {ReadonlyArray<Readonly<{
  *   id: string, capability: string, status: string,
- *   method: null, path: null, requestSchema: null, responseSchema: null,
+ *   method: string|null, path: string|null, requestSchema: null, responseSchema: null,
  *   implemented: boolean, blocker: string, unblockRequires: string
  * }>>}
  */
@@ -88,72 +94,70 @@ export const PENDING_PROVISIONING_CONTRACTS = Object.freeze([
   Object.freeze({
     id: 'school-registry',
     capability: 'list and read school installation records for the Super Admin registry',
-    status: ProvisioningContractStatus.BLOCKED_NOT_CONTRACTED,
-    method: null,
-    path: null,
+    status: ProvisioningContractStatus.PUBLISHED,
+    method: 'GET',
+    path: '/api/admin/schools',
     requestSchema: null,
     responseSchema: null,
-    implemented: false,
+    implemented: true,
     blocker:
-      'The schools and school_domains tables exist, but no endpoint is published. Pagination, ' +
-      'filtering, sorting, plan-label resolution and the renewal/commercial fields that the ' +
-      'approved Super Admin table already displays are all undefined.',
+      'Backend endpoint is live and Super Admin guarded. The frontend has no registry client ' +
+      'and no owner-approved registry screen scope for this build.',
     unblockRequires:
-      'KiloCode publishes the registry contract: method and path, the response envelope, ' +
-      'pagination/filter/sort semantics, and the renewal field the UI column needs.',
+      'Owner approves the Super Admin registry UI scope; the client then binds the documented ' +
+      'response envelope without modelling a payload shape in this module.',
   }),
   Object.freeze({
     id: 'school-provisioning',
     capability: 'create a school and provision its dedicated installation and database',
-    status: ProvisioningContractStatus.BLOCKED_NOT_CONTRACTED,
-    method: null,
-    path: null,
+    status: ProvisioningContractStatus.PUBLISHED,
+    method: 'POST',
+    path: '/admin/schools/provision',
     requestSchema: null,
     responseSchema: null,
-    implemented: false,
+    implemented: true,
     blocker:
-      'provisioning_jobs exists as a table, but no create/provision endpoint is published. ' +
-      'Idempotency, duplicate handling and retry semantics are undefined, and the contract does ' +
-      'not even define 409 Conflict. The Batch C exit gate requires that a retry cannot silently ' +
-      'create inconsistent duplicate data; that guarantee can only be made and tested server-side.',
+      'Backend endpoint is live (Super Admin guarded), with an idempotent state machine that ' +
+      'is backend-tested and was exercised on a real Hostinger deployment. The frontend has ' +
+      'no provisioning client; binding it is not authorized in this build.',
     unblockRequires:
-      'KiloCode publishes the provisioning contract: method and path, request fields, the ' +
-      'idempotency key strategy, duplicate/conflict status semantics (including 409), retry rules, ' +
-      'and the job status lifecycle returned to the client.',
+      'Owner approves the provisioning UI scope. The client must use the documented ' +
+      'idempotency/duplicate semantics; this module still models no payload.',
   }),
   Object.freeze({
     id: 'qr-payload',
     capability: 'generate and validate the school-connection QR payload',
-    status: ProvisioningContractStatus.BLOCKED_NOT_CONTRACTED,
-    method: null,
-    path: null,
+    status: ProvisioningContractStatus.PUBLISHED,
+    method: 'GET',
+    path: '/connect/qr',
     requestSchema: null,
     responseSchema: null,
-    implemented: false,
+    implemented: true,
     blocker:
-      'No payload format, signing key, expiry window or revocation rule is published. C-O-03 ' +
-      'explicitly forbids writing a parser or validator until this exists, and guessing a payload ' +
-      'shape would produce a client that silently rejects valid codes.',
+      'Backend renders a short-lived invite token as SVG (no user id, no school id, no ' +
+      'credential inside). Expired, revoked or exhausted invites return 410, not a code. ' +
+      'The frontend still contains no QR parser or validator, per C-O-03.',
     unblockRequires:
-      'KiloCode publishes the QR payload contract (fields, encoding, signature, expiry, revocation) ' +
-      'and the owner approves camera/PWA scope for scanning (packet O-10.4, batch L-O-04).',
+      'Owner approves camera/PWA scanning scope (packet O-10.4, batch L-O-04). Any scanner ' +
+      'must validate against the backend contract, never a shape guessed here.',
   }),
   Object.freeze({
     id: 'school-connection-code',
     capability: 'resolve a school from the manual domain + code the approved UI already collects',
-    status: ProvisioningContractStatus.BLOCKED_NO_IMPLEMENTATION,
-    method: null,
-    path: null,
+    status: ProvisioningContractStatus.PUBLISHED,
+    method: 'POST',
+    path: '/api/connect/resolve',
     requestSchema: null,
     responseSchema: null,
-    implemented: false,
+    implemented: true,
     blocker:
-      'No published column stores a connection code. schools and school_domains have no code ' +
-      'field, so "HZ-9246" in the approved UI maps to nothing. There is also no resolution endpoint.',
+      'Backend resolves a domain or invite code to a sign-in location, with an identical ' +
+      'response whether or not the school exists (no enumeration oracle) and per-IP ' +
+      'throttling. GET /api/connect/verify checks an invite. The frontend has no resolve ' +
+      'client of its own yet.',
     unblockRequires:
-      'KiloCode publishes where the connection code lives (table, column, hashing, expiry and ' +
-      'revocation) plus the resolve endpoint contract. Per the approved reference it must be ' +
-      'short-lived and revocable, never a permanent secret.',
+      'Owner approves the connect UI scope; the client binds the documented response shape ' +
+      'without modelling a payload here.',
   }),
   Object.freeze({
     id: 'plan-catalogue',
@@ -165,37 +169,62 @@ export const PENDING_PROVISIONING_CONTRACTS = Object.freeze([
     responseSchema: null,
     implemented: false,
     blocker:
-      'plan_code is VARCHAR(64) and references a plan rather than pricing. No plan table, ' +
-      'enumeration or endpoint is published, and PROJECT_MEMORY lists Starter/Growth/Complete only ' +
-      'as PROPOSED labels. The approved Super Admin screen already displays those three.',
+      'license_plans exists as a seeded control-plane table and BillingService resolves ' +
+      'plan_code server-side, but NO endpoint publishes the catalogue. Plan labels remain ' +
+      'owner-negotiated; no public hard-coded pricing exists, by design.',
     unblockRequires:
-      'KiloCode publishes the plan catalogue contract and the owner approves the label set. ' +
-      'No public hard-coded pricing may ever be introduced.',
+      'Owner approves a published plan catalogue contract and the label set. No pricing may ' +
+      'ever be hard-coded into the product.',
   }),
 ]);
 
-/** No provisioning capability is bindable yet. */
+/** The frontend is not bound to any of these capabilities yet. */
 export const PROVISIONING_INTEGRATION_AUTHORIZED = false;
 
 /**
- * Invariant guard: throws if an entry gains an invented schema, endpoint or
- * implementation claim while uncontracted.
+ * Invariant guard: published entries must carry a real method/path and claim
+ * implementation; unpublished entries must carry none. Payload schemas are
+ * NEVER allowed here, published or not.
  */
 export function assertNoInventedProvisioningSchemas(contracts = PENDING_PROVISIONING_CONTRACTS) {
   if (PROVISIONING_INTEGRATION_AUTHORIZED) {
-    throw new Error('provisioning integration is authorized without a published contract');
+    const unpublished = contracts.filter(
+      (contract) => contract.status !== ProvisioningContractStatus.PUBLISHED,
+    );
+    if (unpublished.length > 0) {
+      throw new Error(
+        'provisioning integration is authorized while capabilities remain unpublished: '
+        + unpublished.map((contract) => contract.id).join(', '),
+      );
+    }
   }
   for (const contract of contracts) {
-    for (const field of ['method', 'path', 'requestSchema', 'responseSchema']) {
-      if (contract[field] !== null) {
-        throw new Error(`provisioning contract '${contract.id}' declares ${field} without a contract`);
-      }
+    if (contract.requestSchema !== null) {
+      throw new Error(
+        `provisioning contract '${contract.id}' declares requestSchema; `
+        + 'payload shapes belong in the backend documents, not here',
+      );
     }
-    if (contract.implemented !== false) {
-      throw new Error(`provisioning contract '${contract.id}' claims implementation without an endpoint`);
+    if (contract.responseSchema !== null) {
+      throw new Error(
+        `provisioning contract '${contract.id}' declares responseSchema; `
+        + 'payload shapes belong in the backend documents, not here',
+      );
     }
     if (contract.status === ProvisioningContractStatus.PUBLISHED) {
-      throw new Error(`provisioning contract '${contract.id}' claims to be published; update this module`);
+      if (contract.method === null || contract.path === null) {
+        throw new Error(`published contract '${contract.id}' lacks a method or path`);
+      }
+      if (contract.implemented !== true) {
+        throw new Error(`published contract '${contract.id}' must claim implementation`);
+      }
+    } else {
+      if (contract.method !== null || contract.path !== null) {
+        throw new Error(`uncontracted '${contract.id}' declares an endpoint`);
+      }
+      if (contract.implemented !== false) {
+        throw new Error(`uncontracted '${contract.id}' claims implementation without an endpoint`);
+      }
     }
   }
   return true;

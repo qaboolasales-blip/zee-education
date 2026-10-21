@@ -16,11 +16,19 @@ Allowed in `zee_education_control`:
 |---|---|---|
 | `schools` | School identity and installation record | Name, address, contact, branding, status, plan, domain |
 | `school_domains` | Verified hostnames for each school | Domain, verification status, TLS hint |
-| `provisioning_jobs` | Installation workflow state | Job type, status, target database name, timestamps |
+| `provisioning_jobs` | Installation workflow state | Job type, status, target database name, idempotency key (UNIQUE), timestamps |
 | `platform_audit_events` | Immutable audit log | Actor, action, target, IP, timestamp |
-| `commercial_records` | Licensing and billing metadata | Line items, plan, price, dates (no PII) |
-| `support_tickets` | Support case metadata | Subject, status, priority, assignment (no conversation content) |
+| `user_school_access` | Which platform user may operate which school (ADR-003) | User id, school id, role |
+| `license_plans` | Seeded plan catalogue — labels only, no pricing | Code, label, sort order |
+| `school_licenses` | Per-school licence state | Plan, starts, expires, status, key hash (never the key) |
+| `license_invoices` | Licence invoices (issued / paid / void) | School, amount, status, reference |
+| `license_payments` | Settled payments against an invoice | Invoice, amount, method, external reference |
+| `school_db_credentials` | Encrypted per-school database connection metadata | Encrypted connection fields, no plaintext secrets in logs |
+| `school_invites` | Short-lived connect / QR invite tokens | Token hash, expiry, revoked / exhausted flags |
 | `migrations` | CI4 migration tracking | Migration name, batch number |
+| Shield `auth_*` tables | Sign-in identities, groups, tokens (Shield-owned) | Managed entirely by Shield migrations |
+| `commercial_records` | **Documented allowance only — no migration exists.** Superseded for licensing by `license_*` above | (unused) |
+| `support_tickets` | **Documented allowance only — no migration exists** | (unused) |
 
 ## School-local data (separate database per school)
 
@@ -60,6 +68,10 @@ Each school's database is provisioned at install time by the Phase P3 installer 
 - `type` — install, migrate, suspend, resume, decommission
 - `status` — pending, running, completed, failed
 - `target_database` — name of the school's dedicated database
+- `idempotency_key` — caller-supplied key (e.g. `install:{school_id}`);
+  UNIQUE index `uq_provisioning_jobs_idempotency_key` (migration
+  `2026-10-20_000016`), nullable — multiple NULLs are allowed, duplicate
+  values are rejected by the database
 - `error_message` — last failure detail (sanitized, no credentials)
 
 ### `platform_audit_events`

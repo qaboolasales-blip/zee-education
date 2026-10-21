@@ -331,8 +331,8 @@ Latest verified result (2026-10-18, Node v24.17.0):
 
 ```text
 UI LOCK OK — 3/3 reference files unchanged.      exit 0
-tests 675 / pass 675 / fail 0 / skipped 0
-suites 154
+tests 802 / pass 802 / fail 0 / skipped 0
+suites 175
 ```
 
 No lint or typecheck configuration exists for this package, and none is claimed.
@@ -704,6 +704,97 @@ contract (IB-01).
 
 Detail: `docs/fees-map.md` and `docs/fees-blockers.md`.
 
+### 5.13 Reports, exports and print templates (Batch J)
+
+**The export permission matrix is transcribed from the reference's own tool lists.**
+The mobile preview's `TL` map gives `reports` to Teacher and School Admin and
+`documents` to Parent, Student and School Admin — so a parent cannot create an export
+and a teacher cannot open documents. `assertReportRolesMatchReferences()` re-derives
+that matrix from the reference source, so it cannot drift.
+
+**No print designer exists, and a scan enforces it.** `assertNoPrintDesigner()` scans
+executable tokens for DOM creation and print-specific styles, so naming `.innerHTML`
+inside another guard's regex is invisible to it while actually building markup is not.
+State-surface names (`spinner`, `skeleton`, …) are deliberately *not* checked here —
+Batch M owns the UI-state audit, and overlapping the lists would make each guard flag
+the other.
+
+**Export failures map to the one existing feedback area.** Every export action in the
+references is a *preview* that reports through `#toast`, so `classifyExportOutcome()`
+maps 401/403, 404, an expired download link, a zero-byte document and a transport
+failure onto that single surface. `assertSingleFeedbackArea()` refuses a second one.
+A result export inherits the Batch H publication gate: an export that would carry an
+unpublished result is refused (`UNPUBLISHED_RESULTS`).
+
+Detail: `docs/reports-map.md` and `docs/reports-blockers.md`.
+
+### 5.14 Super Admin commercial, license and support (Batch K)
+
+**The licence badge mapping is transcribed from the reference's own `stc`:**
+`Active` → `.g`, `Renewal due` → `.w`, anything else → `.n`. One deliberate rule: an
+unrecognised state such as `Expired` keeps the neutral badge and reports `known: false`
+— a lapsed licence must never render green. `assertLicenseStatesMatchReferences()`
+fails if the reference's own mapping changes.
+
+**Support access is an explicit allowlist, not a role check.** The reference's
+*Support access rule* permits installation health and approved logs and keeps school
+records isolated; `authoriseSupportAction()` refuses every school-data category even
+for Super Admin, and requires an audited reason before approved logs may be read.
+
+**A renewal reminder is prepared but never sent.** The reference says
+`Preview only — email not connected`, so `prepareRenewalReminder()` returns
+`state: 'prepared'`, `sent: false`. There is no code path that produces a send.
+
+Detail: `docs/commercial-map.md` and `docs/commercial-blockers.md`.
+
+### 5.15 Mobile connection, role launch and resilience (Batch L)
+
+The reference's `connectSchool()` is transcribed exactly: both `domain` and `code` are
+required, the display name is derived from the first domain label, and the report is
+`Connected to … in this demo` — the word *demo* is part of the locked copy, so
+`connectionReport()` returns `demo: true` and never a session.
+
+**The storage guarantee is Batch B's, not duplicated.** Batch B bans every storage
+primitive absolutely across `core/**`; a second guard here would have to *name* them,
+which Batch B's ban correctly treats as a violation. `selectedSchool()` is therefore
+in-memory and `clearSelectedSchool()` clears it on logout or school switch.
+
+**Role launch uses existing screens only.** Every role lands on `Home` with the role's
+existing tool list; the hidden mobile scrollbar is drift-guarded. **No manifest,
+service worker or offline surface exists** anywhere in `core/`, and a scan enforces it.
+
+Detail: `docs/connection-map.md` and `docs/connection-blockers.md`.
+
+### 5.16 Integration, security and release hardening (Batch M)
+
+**The release security scan is delivered and runs over every module.** Three views, each
+chosen so the guard cannot defeat itself: development URLs from string *literals*,
+secret identifiers and debug calls from *executable tokens*. Batch B already owns the
+storage, `console.*` and token-name bans, so this scan is deliberately **additive** —
+re-declaring those would violate Batch B's own guard.
+
+**No custom loading/error/empty surface can be created.** `assertNoCustomStateSurface()`
+scans executable tokens for DOM creation, and `assertStateSurfacesMatchReferences()`
+fails if any reference *gains* a spinner, skeleton, banner or modal.
+
+M-O-01 (merged real APIs) and M-O-04 (Cline's regression harness) remain blocked.
+
+Detail: `docs/hardening-map.md` and `docs/hardening-blockers.md`.
+
+### 5.17 Pilot release and handover (Batch N)
+
+**The production configuration validator is delivered.** A release must use a relative
+base path (rejecting `http://…` and `//…`), a production environment and no debug flag;
+`productionReadiness()` collects every reason and `assertProductionConfig()` throws.
+The release share boundary re-runs the Batch G gate, so a pilot environment cannot
+relax V1 sharing.
+
+N-O-04's onboarding text is **external documentation** (`docs/role-onboarding.md`),
+because adding help text to the locked screens would be a visual change. The deployed
+comparison and pilot flows remain blocked.
+
+Detail: `docs/release-map.md`, `docs/release-blockers.md` and `docs/role-onboarding.md`.
+
 ### 5.5 Two traps to avoid
 
 1. **Do not copy the contract's Base URL into browser code.** The contract says
@@ -755,5 +846,16 @@ Detail: `docs/fees-map.md` and `docs/fees-blockers.md`.
 | `docs/assessment-blockers.md` | H-O-06: the eight assessment gaps recorded instead of new UI |
 | `docs/fees-map.md` | I-O-01…I-O-05: fee/receipt elements, money rules, ledger states, manual-payment refusals and the no-gateway enforcement |
 | `docs/fees-blockers.md` | IB-01IB-09: the nine fee gaps recorded instead of new UI |
+| `docs/reports-map.md` | J-O-01…J-O-04: export/print mapping and the no-designer guard |
+| `docs/reports-blockers.md` | JB-01…JB-06: the report gaps recorded instead of new UI |
+| `docs/commercial-map.md` | K-O-01…K-O-04: licence badge transcription and the support allowlist |
+| `docs/commercial-blockers.md` | KB-01…KB-05: the commercial gaps recorded instead of new UI |
+| `docs/connection-map.md` | L-O-01…L-O-05: connection, role launch and the storage guarantee |
+| `docs/connection-blockers.md` | LB-01…LB-04: the connection gaps recorded instead of new UI |
+| `docs/hardening-map.md` | M-O-02/M-O-03: state-surface audit and the release security scan |
+| `docs/hardening-blockers.md` | MB-01…MB-03: integration/recovery/regression blockers |
+| `docs/release-map.md` | N-O-01…N-O-04: production validator and handover |
+| `docs/release-blockers.md` | NB-01…NB-03: pilot release blockers |
+| `docs/role-onboarding.md` | N-O-04: external role onboarding/help text |
 | `docs/decision-policy.md` | When I act on my own and when I escalate to the owner |
 | `docs/backend-contract-dependency.md` | Batch A contract-state record — superseded by `auth-contract-review.md` |

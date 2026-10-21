@@ -32,10 +32,23 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MIGRATIONS = resolve(REPO_ROOT, 'backend', 'app', 'Database', 'Migrations');
 
 const SOURCES = Object.fromEntries(
-  Object.values(CONTROL_PLANE_ENTITIES).map((meta) => [
-    meta.entity,
-    readFileSync(resolve(MIGRATIONS, meta.migration), 'utf8'),
-  ]),
+  Object.values(CONTROL_PLANE_ENTITIES).map((meta) => {
+    const primary = readFileSync(resolve(MIGRATIONS, meta.migration), 'utf8');
+    // `schools` is built across three migrations: 000001 creates it, 000006
+    // extends it and 000007 adds school_code. The drift guard must scan all
+    // three, so concatenate them for that entity.
+    if (meta.entity === 'schools') {
+      return [
+        meta.entity,
+        [
+          primary,
+          readFileSync(resolve(MIGRATIONS, '2026-10-18_000006_extend_schools_table.php'), 'utf8'),
+          readFileSync(resolve(MIGRATIONS, '2026-10-18_000007_add_school_code.php'), 'utf8'),
+        ].join('\n'),
+      ];
+    }
+    return [meta.entity, primary];
+  }),
 );
 
 describe('published control-plane schema', () => {
@@ -126,8 +139,10 @@ describe('column metadata', () => {
 
   it('returns null for an unknown entity or column', () => {
     assert.equal(entityMeta('students'), null);
-    assert.equal(columnMeta('schools', 'address'), null);
     assert.equal(columnMeta('students', 'name'), null);
+    // `address` is now a real column on schools (migration 000006, C-K-01), so
+    // the null case needs a column that genuinely does not exist.
+    assert.equal(columnMeta('schools', 'nonexistent_column'), null);
   });
 });
 
@@ -194,15 +209,18 @@ describe('unpublished fields are recorded, not invented', () => {
   });
 
   it('confirms the school connection code truly has no column', () => {
-    // `plan_code` is the only code-like column and it references a commercial
-    // plan, never a connection secret. PUB-01 stands while that is true.
+    // `plan_code` and `school_code` are the only code-like columns. `school_code`
+    // was added by migration 000007 (C-K-02) as a unique 3-50-char identifier,
+    // NOT a connection secret — so PUB-01 is narrowed to what is still
+    // unpublished: the code has no published semantics, no payload contract and
+    // no way for the frontend to validate or bind it.
     const codeLike = [];
     for (const meta of Object.values(CONTROL_PLANE_ENTITIES)) {
       for (const column of Object.keys(meta.columns)) {
         if (/code/i.test(column)) codeLike.push(`${meta.entity}.${column}`);
       }
     }
-    assert.deepEqual(codeLike, ['schools.plan_code']);
+    assert.deepEqual(codeLike, ['schools.plan_code', 'schools.school_code']);
   });
 
   it('confirms plan_code carries no pricing', () => {

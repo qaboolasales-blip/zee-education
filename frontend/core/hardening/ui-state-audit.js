@@ -15,6 +15,8 @@
  * No DOM, no rendering.
  */
 
+import { stripCommentsAndLiterals } from '../fees/payment-boundary.js';
+
 /** Surfaces that would each be a visible addition if they appeared. */
 export const FORBIDDEN_STATE_SURFACES = Object.freeze([
   'spinner',
@@ -45,6 +47,10 @@ export const APPROVED_STATE_SURFACES = Object.freeze({
  */
 export function assertNoCustomStateSurface(sources) {
   const list = Array.isArray(sources) ? sources : [];
+  // Only this module is exempt, and only from the *surface-name* half: its own
+  // FORBIDDEN_STATE_SURFACES list legitimately contains those names. The creation
+  // half needs no exemption at all, because it scans executable tokens — a guard
+  // that names `.innerHTML` inside a regex literal is invisible to it.
   const DECLARATION_MODULES = ['core/hardening/ui-state-audit.js'];
   const isDeclaration = (path) =>
     DECLARATION_MODULES.some((module) => path.replace(/\\/g, '/').endsWith(module));
@@ -59,11 +65,12 @@ export function assertNoCustomStateSurface(sources) {
   const problems = [];
   for (const source of list) {
     if (!source || typeof source.code !== 'string') continue;
-    if (isDeclaration(source.path)) continue;
+    const executable = stripCommentsAndLiterals(source.code);
     for (const { label, pattern } of creationPatterns) {
-      if (pattern.test(source.code)) problems.push(`${source.path}: ${label}`);
+      if (pattern.test(executable)) problems.push(`${source.path}: ${label}`);
     }
     // A forbidden surface named outside a declaration module is a visual change.
+    if (isDeclaration(source.path)) continue;
     for (const surface of FORBIDDEN_STATE_SURFACES) {
       if (new RegExp(`['"\`]${surface}['"\`]`).test(source.code)) {
         problems.push(`${source.path}: forbidden state surface "${surface}"`);

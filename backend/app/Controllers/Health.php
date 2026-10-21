@@ -71,7 +71,10 @@ class Health extends BaseController
                 return 'not_configured';
             }
 
-            $db->close();
+            // Connect lazily: merely obtaining the Connection object does NOT
+            // authenticate. A real round-trip is required, otherwise this
+            // endpoint reports "connected" for a database that rejects us.
+            $db->query('SELECT 1');
 
             return 'connected';
         } catch (Throwable) {

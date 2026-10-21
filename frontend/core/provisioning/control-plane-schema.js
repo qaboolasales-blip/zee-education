@@ -13,9 +13,12 @@
  *      2026-10-18_000002_create_school_domains_table.php
  *      2026-10-18_000003_create_provisioning_jobs_table.php
  *      2026-10-18_000004_create_platform_audit_events_table.php
+ *      2026-10-18_000006_extend_schools_table.php
+ *      2026-10-18_000007_add_school_code.php
  *  Cross-checked against:
  *    backend/docs/migration-plan.md
  *    backend/docs/control-plane-data-boundary.md
+ *    backend/docs/provisioning-state-machine.md
  *
  * WHAT THIS IS NOT
  *  - Not an API contract. No school-registry or provisioning ENDPOINT exists
@@ -32,6 +35,23 @@ export const SCHOOL_STATUS_VALUES = Object.freeze([
   'active',
   'suspended',
   'decommissioned',
+]);
+
+/**
+ * Provisioning lifecycle states of `schools.installation_state`, verbatim from
+ * migration 000006. This is the state machine documented in
+ * `backend/docs/provisioning-state-machine.md` (C-K-03): requested → validating
+ * → creating → migrated → seeded → completed, with any state → failed and
+ * failed → validating on retry.
+ */
+export const PROVISIONING_LIFECYCLE_STATES = Object.freeze([
+  'requested',
+  'validating',
+  'creating',
+  'migrated',
+  'seeded',
+  'completed',
+  'failed',
 ]);
 
 /** Lifecycle operations of a `provisioning_jobs` row, verbatim from 000003. */
@@ -94,8 +114,24 @@ export const CONTROL_PLANE_ENTITIES = Object.freeze({
       locale: column('VARCHAR', { hasDefault: true, default: 'en', maxLength: 8 }),
       created_at: column('DATETIME'),
       updated_at: column('DATETIME'),
+      // Added by migration 000006 (C-K-01) and 000007 (C-K-02).
+      contact_email: column('VARCHAR', { nullable: true, maxLength: 191 }),
+      contact_phone: column('VARCHAR', { nullable: true, maxLength: 32 }),
+      address: column('TEXT', { nullable: true }),
+      branding_logo_path: column('VARCHAR', { nullable: true, maxLength: 500 }),
+      branding_reference: column('VARCHAR', { nullable: true, maxLength: 191 }),
+      commercial_metadata: column('JSON', { nullable: true }),
+      installation_state: column('ENUM', {
+        hasDefault: true,
+        default: 'requested',
+        values: ['requested', 'validating', 'creating', 'migrated', 'seeded', 'completed', 'failed'],
+      }),
+      installation_status: column('VARCHAR', { nullable: true, maxLength: 64 }),
+      provisioned_at: column('DATETIME', { nullable: true }),
+      school_code: column('VARCHAR', { nullable: true, maxLength: 50 }),
     }),
-    enums: Object.freeze({ status: SCHOOL_STATUS_VALUES }),
+    enums: Object.freeze({ status: SCHOOL_STATUS_VALUES, installation_state: PROVISIONING_LIFECYCLE_STATES }),
+    uniqueKeys: Object.freeze(['school_code']),
     implemented: true,
   }),
 
@@ -194,11 +230,17 @@ export const DOCUMENTED_BUT_UNIMPLEMENTED_ENTITIES = Object.freeze([
 export const UNPUBLISHED_FIELDS = Object.freeze([
   Object.freeze({
     id: 'PUB-01',
-    field: 'school connection code',
+    field: 'school connection code semantics',
     uiHook: 'Mobile Preview #code input, `Connect school`, Profile `School code: HZ-9246`; School Dashboard Settings → App connection `Code` input',
     note:
-      'schools and school_domains contain NO code column. The code has no published field, so it ' +
-      'cannot be validated, bound or persisted by the frontend.',
+      'Migration 000007 (C-K-02) added a UNIQUE `schools.school_code` column ' +
+      '(VARCHAR 50, nullable), and `docs/provisioning-state-machine.md` documents ' +
+      'the rules: 3-50 chars, alphanumeric + hyphens/underscores, no PII, uniqueness ' +
+      'enforced at database level. So the COLUMN exists but the SEMANTICS are not ' +
+      'contracted: there is no published payload format, no signature, no expiry, ' +
+      'no revocation and no endpoint that accepts or returns it. The frontend may ' +
+      'validate the character set against the published rule, but it may not bind, ' +
+      'persist or transmit the code to any endpoint, because no such endpoint exists.',
   }),
   Object.freeze({
     id: 'PUB-02',

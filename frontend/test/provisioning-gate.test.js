@@ -30,16 +30,110 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
 const CORE_DIR = resolve(HERE, '..', 'core');
 
-describe('C-O-04 — no provisioning endpoint is published', () => {
-  it('publishes only health, setup and home', () => {
+describe('C-O-04 — the provisioning surface is published on the control plane only', () => {
+  it('publishes the documented control-plane route surface', () => {
+    // Snapshot of every string-literal route path in Routes.php, in declaration
+    // order. A new route must be added here deliberately — this is the gate
+    // that keeps the published surface reviewable. Shield's own auth routes are
+    // registered via service('auth')->routes() and never appear as literals.
     const routes = readFileSync(resolve(REPO_ROOT, 'backend', 'app', 'Config', 'Routes.php'), 'utf8');
     const paths = [...routes.matchAll(/\$routes->\w+\(\s*'([^']*)'/g)].map((m) => m[1]);
-    assert.deepEqual(paths, ['health', 'setup', '/']);
-    assert.equal(PROVISIONING_ENDPOINTS_PUBLISHED, false);
+    assert.deepEqual(paths, [
+      'health',
+      'setup',
+      'install',
+      '/',
+      'preflight',
+      'database',
+      'database',
+      'admin',
+      'admin',
+      'install/done',
+      'api/school',
+      'students',
+      'students',
+      'invoices',
+      'api/school',
+      'staff',
+      'attendance',
+      'fees/invoices',
+      'fees/receipts',
+      'api/health',
+      'api/connect',
+      'resolve',
+      'verify',
+      'api/connect',
+      'invite',
+      'connect/qr',
+      'admin/schools',
+      '/',
+      '/',
+      'provision',
+      'api/admin',
+      'schools',
+      'schools',
+      '/',
+      'portal',
+      'api/admin/billing',
+      'summary',
+      'upcomings',
+      'invoices/(:num)',
+      'issue',
+      'invoice',
+      'pay',
+      'void',
+      'revoke',
+      'renew',
+      'school',
+      'm',
+    ]);
+    assert.equal(PROVISIONING_ENDPOINTS_PUBLISHED, true);
   });
 
-  it('has no model layer yet', () => {
-    assert.deepEqual(readdirSync(resolve(REPO_ROOT, 'backend', 'app', 'Models')), ['.gitkeep']);
+  it('has no model layer for school-local data in the control plane', () => {
+    // KiloCode added two control-plane models plus a SchoolLocal subdirectory:
+    //   - `Models/AuditEventModel.php` (B-K-07) — over `platform_audit_events`,
+    //     append-only, no school-local data.
+    //   - `Models/SchoolsModel.php` (C-K-01) — over the `schools` control-plane
+    //     table, which holds install/registry metadata, NOT school-local people
+    //     or academic data (ADR-001).
+    //   - `Models/SchoolLocal/AcademicSessionModel.php` (D-K-01) — a school-LOCAL
+    //     model, which is CORRECT: it lives in a subdirectory and maps to an
+    //     `academic_sessions` table that belongs to the per-school database, not
+    //     the control plane. The ADR-001 boundary is a directory boundary as
+    //     well as a data one.
+    // The assertion is therefore on WHAT exists in `Models/` (control plane)
+    // versus what exists in `Models/SchoolLocal/` (school local). No Student,
+    // Guardian, Staff, Attendance, Result, Fee, Timetable, Homework, Notice,
+    // Assessment, Mark, Class, Section, Subject, Session, TeacherAssignment,
+    // Invoice, Payment, Discount, Fine, Export, PrintTemplate,
+    // CommercialRecord, SupportTicket, License or Renewal model may exist in
+    // the control plane, because all of those are school-local (ADR-001).
+    const models = readdirSync(resolve(REPO_ROOT, 'backend', 'app', 'Models'));
+    const schoolLocal = readdirSync(resolve(REPO_ROOT, 'backend', 'app', 'Models', 'SchoolLocal'));
+    assert.deepEqual(models, ['.gitkeep', 'AuditEventModel.php', 'SchoolLocal', 'SchoolsModel.php']);
+    // FeeModel was split into FeeInvoiceModel + FeeReceiptModel when the fees
+    // surface grew invoices and receipts (backend-tested via SchoolApi).
+    assert.deepEqual(schoolLocal, ['AcademicSessionModel.php','AssessmentModel.php','FeeInvoiceModel.php','FeeReceiptModel.php','HomeworkModel.php','NoticeModel.php','TimetableModel.php']);
+    // The forbidden-name scan is scoped to FILES in the top-level Models
+    // directory, because `AcademicSessionModel.php` lives in SchoolLocal/ and
+    // legitimately contains the word "Session". A subdirectory name is not a
+    // model, so it is excluded from the name scan but still listed in the
+    // directory assertion above.
+    const topLevelFiles = models.filter((name) => name.endsWith('.php')).join(' ');
+    for (const forbidden of [
+      'Student', 'Guardian', 'Staff', 'Teacher', 'Attendance', 'Result',
+      'Fee', 'Invoice', 'Payment', 'Discount', 'Fine', 'Timetable',
+      'Homework', 'Notice', 'Assessment', 'Mark', 'Class', 'Section',
+      'Subject', 'Session', 'Assignment', 'Export', 'PrintTemplate',
+      'Commercial', 'Support', 'License', 'Renewal',
+    ]) {
+      assert.ok(!topLevelFiles.includes(forbidden), `no ${forbidden} model may exist in the control plane`);
+    }
+    // `SchoolsModel` is allowed because it maps to the `schools` control-plane
+    // table (install/registry metadata only, ADR-001). It must not be a
+    // school-LOCAL model — the table name is the discriminator.
+    assert.ok(models.includes('SchoolsModel.php'));
   });
 
   it('documents the schema and endpoints separately', () => {
@@ -57,15 +151,22 @@ describe('C-O-03/C-O-04 — no invented provisioning contract', () => {
     );
   });
 
-  it('declares no endpoint or payload for any capability', () => {
+  it('records real backend endpoints and invents no payload schemas', () => {
     assert.equal(assertNoInventedProvisioningSchemas(), true);
     for (const contract of PENDING_PROVISIONING_CONTRACTS) {
-      assert.equal(contract.method, null);
-      assert.equal(contract.path, null);
+      // Payload shapes are never modelled here, published or not — they live
+      // in the backend documents.
       assert.equal(contract.requestSchema, null);
       assert.equal(contract.responseSchema, null);
-      assert.equal(contract.implemented, false);
-      assert.notEqual(contract.status, ProvisioningContractStatus.PUBLISHED);
+      if (contract.status === ProvisioningContractStatus.PUBLISHED) {
+        assert.equal(typeof contract.method, 'string');
+        assert.equal(typeof contract.path, 'string');
+        assert.equal(contract.implemented, true);
+      } else {
+        assert.equal(contract.method, null);
+        assert.equal(contract.path, null);
+        assert.equal(contract.implemented, false);
+      }
     }
   });
 
@@ -102,7 +203,7 @@ describe('C-O-03/C-O-04 — no invented provisioning contract', () => {
   it('summarizes the block without leaking payload data', () => {
     const summary = describeProvisioningBlock();
     assert.equal(summary.schemaPublished, true);
-    assert.equal(summary.endpointsPublished, false);
+    assert.equal(summary.endpointsPublished, true);
     assert.equal(summary.integrationAuthorized, false);
     assert.equal(summary.capabilities.length, 5);
     assert.doesNotMatch(JSON.stringify(summary), /requestSchema|responseSchema|password/i);

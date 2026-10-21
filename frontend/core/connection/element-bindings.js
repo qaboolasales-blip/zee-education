@@ -38,7 +38,15 @@ export const CONNECTION_BINDINGS = Object.freeze([
     kind: HookKind.ATTRIBUTE,
     field: null,
     state: 'unpublished',
-    note: 'The same code `HZ-9246` appears in the School Dashboard app-connection input.',
+    note:
+      'Migration 000007 (C-K-02) added a UNIQUE `schools.school_code` column (VARCHAR 50, ' +
+      'nullable) and `docs/provisioning-state-machine.md` documents the character rule ' +
+      '(3-50 chars, alphanumeric + hyphens/underscores, no PII, uniqueness enforced at database ' +
+      'level). So the COLUMN exists. What is still missing is the SEMANTICS: no published payload ' +
+      'format, no signature, no expiry, no revocation and no endpoint that accepts or returns a ' +
+      'code. The frontend may validate the character set against the published rule, but it may ' +
+      'not bind, persist or transmit the code to any endpoint, because no such endpoint exists. ' +
+      'See PUB-01.',
   }),
   Object.freeze({
     id: 'LCB-03',

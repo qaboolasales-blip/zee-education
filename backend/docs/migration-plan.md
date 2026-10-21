@@ -45,6 +45,9 @@ Columns:
 - `type` ENUM('install','migrate','suspend','resume','decommission') NOT NULL
 - `status` ENUM('pending','running','completed','failed') NOT NULL DEFAULT 'pending'
 - `target_database` VARCHAR(191) NOT NULL
+- `idempotency_key` VARCHAR(191) NULL — UNIQUE `uq_provisioning_jobs_idempotency_key`
+  (added by migration `2026-10-20_000016`; nullable so repeated NULL keys remain
+  allowed while duplicate keys are rejected by the database — RB-4)
 - `attempts` INT UNSIGNED NOT NULL DEFAULT 0
 - `error_message` TEXT NULL
 - `started_at` DATETIME NULL

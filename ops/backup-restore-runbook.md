@@ -73,6 +73,8 @@ Drill steps (run on a **non-production** environment, using synthetic/seed data 
 
 **Status as of 2026-10-17:** NOT performed — there is no provisioning/migrations/data yet, so no restore has been executed. This is a **planned drill** and remains an open pilot blocker (C-10.4).
 
+**Update 2026-10-20:** a backup/restore drill **was executed** on the real Hostinger deployment across both databases (control plane and a school database), after the original statement above. Evidence lives in `backend/FINAL_RELEASE_AND_PILOT_REPORT.md` and `PILOT_DEPLOYMENT_REPORT.md`. The copy-per-drill checklist in §6 was not filled in as a separate record — treat the final report as the drill record of this build. Still open regardless: `<<OWNER_RTO>>` / `<<OWNER_RPO>>` / retention in §1 are owner decisions (gate G9/G10 in `ops/release-gates.md` stay NO-GO until the owner signs off).
+
 ## 6. Restore verification checklist (copy per drill)
 
 ```text

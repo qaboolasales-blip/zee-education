@@ -20,6 +20,31 @@ contract-state question.
 
 Nothing in `backend/**` was modified by me; the new files are KiloCode's work.
 
+### 1.1 Re-check on 2026-10-18 — two new backend findings
+
+Re-reading the tree before this batch, two KiloCode changes were found that do
+not change the auth verdict but must be recorded accurately:
+
+1. **`backend/app/Database/Migrations/2026-10-18_000005_create_platform_roles.php`**
+   exists. It is a **seed**, not a schema: it calls
+   `$this->db->table('auth_groups')->insertBatch([...])` with the five platform
+   role names (`super_admin`, `school_admin`, `teacher`, `parent`, `student`)
+   and deletes them in `down()`. It creates no table. This is legitimate Batch B
+   work (B-K-03) and does not introduce a permission model.
+
+2. **`backend/app/Config/Routes.php` now ends with**
+   `service('auth')->routes($routes);`. That delegates to CodeIgniter Shield,
+   which reads `config('AuthRoutes')->routes`. **No `AuthRoutes` config exists in
+   `app/Config/`** (checked: only `Auth.php`, `AuthGroups.php`, `AuthToken.php`),
+   and no Shield auth controller has been wired into this application, so the
+   delegation is inert. The string-literal route scan still returns exactly
+   `['health', 'setup', '/']`.
+
+The published OpenAPI contract still documents only `GET /health` and
+`GET /setup`, so B-O-02 and B-O-03 remain BLOCKED. My own gate test had a stale
+assertion (`/user|role|.../i` matched the new migration filename) and has been
+made precise: it now checks for **table-creating** migrations only.
+
 ## 2. What `backend/docs/api/openapi-v0.md` actually says
 
 Version `0.1.0`, status **`DRAFT — Batch A baseline`**. Its own scope sentence:
@@ -28,12 +53,33 @@ Version `0.1.0`, status **`DRAFT — Batch A baseline`**. Its own scope sentence
 > plane. It covers only the endpoints available in Batch A. **Future tenant,
 > auth and provisioning endpoints will be added in later batches.**"
 
-### Published endpoints (exhaustive)
+### Published endpoints — Batch A (exhaustive)
 
 | Endpoint | Auth | Contract content |
 |---|---|---|
 | `GET /health` | Unauthenticated | 200 only. JSON. Allowed keys `status`, `app`, `plane`, `environment`, `version`, `milestone`, `database`, `time`, `timezone`, `currency`. `status` ∈ `ok\|degraded`. `database` ∈ `connected\|unreachable\|not_configured` |
 | `GET /setup` | Unauthenticated | 200 only. **`Content-Type: text/html`**. No school record, no database change, no credentials accepted/stored. GET only, POST not routed |
+
+### Published endpoints — Batch B (added 2026-10-18)
+
+| Endpoint | Auth | Contract content |
+|---|---|---|
+| `GET/POST /login` | None (public) | 302 redirect on success (to configured redirect); 200 with validation errors on failure. "User login endpoint (provided by Shield). Authenticates with valid credentials." |
+| `GET /logout` | Required | 302 redirect to login. "Logout current session." |
+| `GET/POST /register` | None (configurable) | Registration, if enabled. |
+| `GET/POST /forgot` | None | Password recovery via email/magic link. |
+| `GET/POST /reset-password` | None (token-based) | Password reset endpoint. |
+
+`docs/authentication-design.md` confirms the library: **CodeIgniter 4 Shield**
+(`codeigniter4/shield` ^1.2, MIT), Session authenticator, server-side session
+management, CSRF protection enabled by default, no role/school data trusted
+from client input. `docs/auth-endpoints.md` lists the same endpoints plus
+`GET/POST /magic-link`.
+
+**Credential scheme, now defined:** form-based login via the Shield Session
+authenticator. The server sets the session cookie as part of the 302 that
+`/login` returns on success. **No bearer token, no `Authorization` header, no
+client-side storage.**
 
 ### Published error table (verbatim)
 
@@ -57,6 +103,13 @@ credentials or internal hostnames in production."
   A browser-supplied slug is never trusted for authorization (ADR-003)."
 - "All future authenticated endpoints will require: Valid session or token;
   Server-side tenant resolution; Explicit CORS allowlist match (never wildcard)."
+
+### Published security notes (verbatim)
+
+- No credentials logged on failure/success
+- Login attempts tracked for security
+- Server-side role enforcement via policies/filters
+- No role trust from client input
 
 ## 3. Comparison against the existing locked login-related UI hooks
 
@@ -155,24 +208,35 @@ one.
 
 ## 6. Exact unblock requirements for B-O-02 / B-O-03
 
-KiloCode must publish, in `backend/docs/api/openapi-v0.md` or a successor:
+KiloCode published a real authentication contract on 2026-10-18. The endpoints
+and the credential scheme now exist; the remaining gaps are narrower.
 
-1. **Credential scheme** — session cookie, `Authorization` header, or both; and
-   if a header, its exact name and format.
-2. **Login** — method, path, request fields, response fields, every failure
-   status, and rate-limit/lockout behaviour.
-3. **Logout** — method, path, whether server-side revocation occurs, idempotency.
-4. **Refresh** — method, path, token lifecycle: rotation, absolute vs idle
-   expiry, revocation.
-5. **Identity/introspection** — method, path, and the **exact role vocabulary**
-   the server returns, so `role-guard.js` can map it to approved screens.
-6. **Permissions** — the permission model enforced server-side, plus the 403
-   response contract. A browser-supplied school id or slug is never trusted.
+**Already published (no longer blockers):**
+1. **Credential scheme** — form-based login via CodeIgniter Shield Session
+   authenticator; session cookie set by the server on the `/login` 302; no
+   bearer token, no `Authorization` header, no client-side storage.
+2. **Login** — `GET/POST /login`, auth None (public), 302 on success, 200 with
+   validation errors on failure.
+3. **Logout** — `GET /logout`, auth Required, 302 redirect to login.
+4. **Register, forgot, reset-password** — `GET/POST` each, auth None.
+
+**Still required before any frontend binding:**
+5. **/login request field names** — the contract says "Authenticates with valid
+   credentials" and never names the form fields. None may be modelled.
+6. **/login and /logout response bodies** — success is a redirect, not JSON, so
+   there is no JSON body to model.
+7. **Refresh** — no endpoint and no token model; the session scheme has nothing
+   to rotate.
+8. **Identity/introspection** — `auth()->user()` is a server-side helper, not an
+   HTTP endpoint, so the role the server assigned cannot be read from the
+   browser. Plus the **exact role vocabulary** the server returns.
+9. **Permissions** — the permission model enforced server-side, plus the 403
+   response contract. `docs/authentication-design.md` lists "Implement custom
+   policies for the 5 role types" as a NEXT STEP, not as done work.
 
 Additionally, before any of it may render:
-
-7. **Cline** approves the UI-lock regression harness
-   (`frontend/docs/ui-lock-test-plan.md`), and
-8. **the owner** resolves BLK-01…BLK-07 in `frontend/docs/auth-ui-blockers.md`,
-   because there is currently no approved screen for sign-in, logout, expiry or
-   forbidden.
+10. **Cline** approves the UI-lock regression harness
+    (`frontend/docs/ui-lock-test-plan.md`), and
+11. **the owner** resolves BLK-01…BLK-09 in `frontend/docs/auth-ui-blockers.md`,
+    because there is still no approved screen for sign-in, logout, expiry or
+    forbidden.

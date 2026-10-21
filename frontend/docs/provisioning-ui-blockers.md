@@ -14,11 +14,33 @@ The asymmetry is the whole story:
 | Layer | Published? |
 |---|---|
 | `schools`, `school_domains`, `provisioning_jobs`, `platform_audit_events` tables | ✅ yes, 4 migrations implemented |
+| `schools` extensions (contact_email, contact_phone, address, branding_logo_path, branding_reference, commercial_metadata, installation_state, installation_status, provisioned_at) | ✅ yes, migration 000006 (C-K-01) |
+| `schools.school_code` | ✅ yes, migration 000007 (C-K-02) — UNIQUE VARCHAR 50 |
+| `academic_sessions` (per-school DB) | ✅ yes, `Models/SchoolLocal/AcademicSessionModel.php` (D-K-01) — correctly school-local |
 | `commercial_records`, `support_tickets` | ⚠️ documented only, no migration |
 | School registry endpoint | ❌ no |
 | Provisioning endpoint | ❌ no |
 | QR payload contract | ❌ no |
-| Connection-code storage | ❌ no column at all |
+| Connection-code SEMANTICS | ❌ no — the column exists but has no payload format, signature, expiry or revocation |
+
+**Re-check 2026-10-18 — three new backend facts, none of which change the verdict:**
+
+1. **Migration 000006 extended `schools`** with `contact_email`, `contact_phone`,
+   `address`, `branding_logo_path`, `branding_reference`, `commercial_metadata`,
+   `installation_state`, `installation_status`, `provisioned_at`. So DSB-01 is
+   **partially closed**: address, contact and branding now exist as columns. The
+   logo still has no storage contract and no approved UI element (DSB-06 stands).
+2. **Migration 000007 added `schools.school_code`** (UNIQUE VARCHAR 50, nullable).
+   So CPB-02 is **partially closed**: the column exists, and
+   `docs/provisioning-state-machine.md` documents the character rule (3-50 chars,
+   alphanumeric + hyphens/underscores, no PII, uniqueness enforced at database
+   level). What is still missing is the SEMANTICS — no payload format, no
+   signature, no expiry, no revocation and no endpoint.
+3. **`Models/SchoolLocal/AcademicSessionModel.php`** (D-K-01) maps to an
+   `academic_sessions` table in the **per-school database**, not the control
+   plane. This is CORRECT under ADR-001 and is the first school-local model. It
+   does not weaken the control-plane boundary: the guard still asserts that no
+   school-local model appears in `Models/` itself.
 
 ---
 

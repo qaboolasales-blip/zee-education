@@ -1,0 +1,53 @@
+{
+    "note":  "Source manifest of the packaged tree. Paths are relative to Zee_Education_v0.1.0/. file_count and total_bytes include this file.",
+    "version":  "0.1.0",
+    "release_type":  "pre-release",
+    "build_date":  "2026-10-20",
+    "git_commit":  "0ee7a233b493921c54795f6441acbaeb4537d281",
+    "git_tag":  null,
+    "file_count":  1308,
+    "total_bytes":  13021608,
+    "surfaces":  [
+                     "Super Admin portal (/portal)",
+                     "School dashboard (/school)",
+                     "Mobile PWA (/m)",
+                     "Installer (/install)"
+                 ],
+    "api":  [
+                "GET /api/health",
+                "GET /api/school/students",
+                "POST /api/school/students",
+                "GET /api/school/invoices",
+                "POST /api/school/staff",
+                "POST /api/school/attendance",
+                "POST /api/school/fees/invoices",
+                "POST /api/school/fees/receipts",
+                "GET /admin/schools",
+                "POST /admin/schools",
+                "POST /admin/schools/provision",
+                "GET /api/admin/billing/summary",
+                "GET /api/admin/billing/upcomings",
+                "GET /api/admin/billing/invoices/{school_id}",
+                "POST /api/admin/billing/issue",
+                "POST /api/admin/billing/invoice",
+                "POST /api/admin/billing/pay",
+                "POST /api/admin/billing/void",
+                "POST /api/admin/billing/revoke",
+                "POST /api/admin/billing/renew"
+            ],
+    "pwa":  [
+                "public/manifest.json",
+                "public/sw.js"
+            ],
+    "top_level":  [
+                      "application/",
+                      "database/",
+                      "documentation/",
+                      "tools/",
+                      "README_FIRST.txt",
+                      "LICENSE.txt",
+                      "CHANGELOG.md",
+                      "package-manifest.json",
+                      ".env.example"
+                  ]
+}
