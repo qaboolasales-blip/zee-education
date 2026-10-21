@@ -3,7 +3,7 @@ name: CI
 # Pinned-runtime test runner for the two release gates that can only close on
 # a remote runner:
 #   G1 - environment/toolchain pin (PHP 8.3 + required extensions + MySQL service)
-#   G2 - automated suite green on that pinned runtime (backend 164/671, frontend 816/816)
+#   G2 - automated suite green on that pinned runtime (backend 164/673, frontend 816/816)
 #
 # Local runs remain the day-to-day signal; this workflow is the record that the
 # same commands pass on a reproducible runner. Neither job ships in the release

@@ -7,19 +7,21 @@
 - Node: v24.17.0, npm 12.0.2
 - Frontend UI lock: PASS (3/3 reference files unchanged)
 - Frontend tests: PASS (816/816 — see "Frontend blocker resolution" below for the earlier failure)
-- Backend phpunit: PASS (**164 tests, 671 assertions, 0 skipped, 0 failures** — current;
+- Backend phpunit: PASS (**164 tests, 673 assertions, 0 skipped, 0 failures** — current;
   earlier phases recorded 62/145, 69/175, 150/603, 155/621 and 161/653 in their own
   sections below)
-- Package (build 8, 2026-10-20): build-package.ps1 verifier 35/35 clean on build tree;
-  clean extraction byte-identical (1,308 files, matching recursive tree hash); shipped
-  `tools/verify-package.php` re-run inside the extracted ZIP: 35/35; ZIP
-  SHA-256 `b249281c81269432950c644669ba3635f56e05b287366dc1835840db784098ab`
-  (build 7's `11fb712e29afb937eb81d944c74e5b4f568ae854a0d0a33a0a23134e1484527f` superseded,
-  kept as `*.zip.bak-20261020-183756`; builds 6/5/4/3/2 kept as
-  `*.zip.bak-20261020-093116` / `-085852` / `-083633` / `-052205` / `-025056`; build 1 as
-  `*.zip.bak-20261019-224837`). Builds 6-8 were documentation-only successors to
-  build 5 (licence-limitation correction, changelog/doc10 clarifications, control-plane
-  table-count fix 14 → 21).
+- Package (build 9, 2026-10-21): built from annotated tag **`v0.1.0-pre`** (commit
+  `b1267dfba2ac22b8de2aec9ba913e4e8d9ad179f`); build-package.ps1 verifier 35/35 clean on
+  build tree; clean extraction byte-identical (1,308 files, matching recursive tree hash);
+  shipped `tools/verify-package.php` re-run inside the extracted ZIP: 35/35; ZIP
+  SHA-256 `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`
+  (build 8's `b249281c81269432950c644669ba3635f56e05b287366dc1835840db784098ab` superseded,
+  kept as `*.zip.bak-20261021-075532`; build 7 kept as `*.zip.bak-20261020-183756`;
+  builds 6/5/4/3/2 kept as `*.zip.bak-20261020-093116` / `-085852` / `-083633` / `-052205` /
+  `-025056`; build 1 as `*.zip.bak-20261019-224837`). Builds 6-8 were documentation-only
+  successors to build 5 (licence-limitation correction, changelog/doc10 clarifications,
+  control-plane table-count fix 14 → 21); build 9 is the tag round (shipped tag statements +
+  `package-manifest.json` now records `git_tag: v0.1.0-pre` instead of `null`).
 
 ## Git commit hash
 0ee7a23
@@ -121,7 +123,9 @@
 - A Super Admin password that had been exposed in chat was rotated. The old password is now
   rejected; the new one was written only to a 0600 server file and never printed.
 - Tests: 62 tests, 146 assertions, 1 skipped, 0 failures.
-- Still BLOCKED: role smoke tests never executed; no Git tag; SSH password still exposed.
+- Still BLOCKED: role smoke tests never executed; SSH password still exposed.
+  (Git tag: closed 2026-10-21 — annotated tag `v0.1.0-pre` pushed, build 9 rebuilt
+  from it.)
 
 ## Deep scan fixes (2026-10-19)
 - Write endpoints added under /api/school (students, staff, attendance, fees, receipts).
@@ -389,13 +393,16 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   (`11fb712e29afb937eb81d944c74e5b4f568ae854a0d0a33a0a23134e1484527f`, 4,106,913 bytes)
   which records that correction in the changelog and clarifies
   `documentation/10-license-and-support.md` ("no online activation" ≠ no licensing),
-  and by the current **build 8**
-  (`b249281c81269432950c644669ba3635f56e05b287366dc1835840db784098ab`, 4,107,190 bytes)
-  which fixes the stale control-plane table count (14 → 21) in `database/README.md`
+  and by the current **build 9**
+  (`46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`, 4,107,274 bytes)
+  which records the new annotated tag `v0.1.0-pre` in `package-manifest.json` (was
+  hardcoded `null`) and updates the shipped tag-honesty statements (README_FIRST,
+  CHANGELOG, doc10, index.html). Build 8 (`b249281c…`, 4,107,190 bytes) had fixed the
+  stale control-plane table count (14 → 21) in `database/README.md`
   and `documentation/03-first-run-setup.md` (verified against the live control DB:
-  21 tables; school DB remains 22). No shipped code changed across builds 5-8; all
-  build-5 test/probe results carry over. Builds 6/7 kept as
-  `*.zip.bak-20261020-093116` / `*.zip.bak-20261020-183756`.
+  21 tables; school DB remains 22). No shipped code changed across builds 5-9; all
+  build-5 test/probe results carry over. Builds 6/7/8 kept as
+  `*.zip.bak-20261020-093116` / `*.zip.bak-20261020-183756` / `*.zip.bak-20261021-075532`.
 - RB-7 **closed** (residuals tracked only as SC-2 `tokenRandomize` + SC-6 CSP — both
   shipped-documented hardening limitations, neither pilot-blocking); records updated
   across `quality/docs/*`, `ops/release-gates.md` (G5 evidence now 39/39, ships in
@@ -410,10 +417,9 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
 - Role smoke tests still never executed (no owner-approved role accounts).
 - QA matrices T-1..T-24 (isolation behaviour) and T-25..T-27 (licence expiry on a live
   school) never executed row-by-row — the evidence bars for gates G7/G8.
-- No Git tag. The working tree was committed and pushed to
-  `github.com/qaboolasales-blip/zee-education` on 2026-10-21 (content commit
-  `8560225`; CI fixes `379c7b7`), so build 8's source is reproducible from that
-  commit — but no tag exists and `package-manifest.json` still records
-  `"git_tag": null` until the owner creates one. (Historical: the tree was at
-  171 uncommitted entries at build-8 time.)
+- ~~No Git tag~~ — **closed 2026-10-21**: the tree was committed and pushed to
+  `github.com/qaboolasales-blip/zee-education`, annotated tag **`v0.1.0-pre`** (commit
+  `b1267df…`) was pushed, and build 9 was rebuilt from that tag so
+  `package-manifest.json` records `"git_tag": "v0.1.0-pre"` (build 8 recorded `null`).
+  The tag is a pre-release tag, not a stable-release tag.
 - Exposed SSH password still not rotated by the owner.

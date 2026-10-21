@@ -74,8 +74,9 @@ Sign-in verified end to end: known-old password REJECTED, new password from the
 1. Role smoke tests were never executed: no Super Admin / School Admin / Teacher / Parent /
    Student trial accounts exist, so attendance, results, manual fees, report/PDF export and
    role-restricted access remain unverified.
-2. No Git tag exists. 98+ working-tree changes are uncommitted, so the deployment is not
-   reproducible from a tagged commit.
+2. ~~No Git tag exists.~~ **Closed 2026-10-21:** annotated tag `v0.1.0-pre` (commit
+   `b1267df…`) pushed; build 9 rebuilt from it, so the manifest records the tag.
+   (At the time this list was written: 98+ uncommitted changes, no tag.)
 3. The SSH password exposed earlier in chat and in the local backend/.env has still not
    been rotated by the owner. That credential is live.
 4. No independent third-party Hostinger buyer account test has been done.
@@ -114,9 +115,9 @@ deployment. See DEEP_CODE_SCAN.md at the project root for the full before/after 
 Production evidence: role smoke 12/12, write API 5/5, mobile 6/6, seeding + idempotency,
 one-school-one-database separation, UI lock 3/3 unchanged, backend 69 tests / 175 assertions.
 
-Still open: no Git tag (the tree was committed and pushed to GitHub on 2026-10-21,
-but no tag exists yet), phpunit test DB not migrated, and the previously exposed SSH
-password still needs rotating by the owner.
+Still open: phpunit test DB not migrated, and the previously exposed SSH password
+still needs rotating by the owner. (Git tag closed 2026-10-21: annotated `v0.1.0-pre`;
+rebuild = build 9.)
 
 ## Package rebuild pass (2026-10-20, build 3) — PRODUCTION NOT TOUCHED
 
@@ -208,11 +209,13 @@ filter; this section records the build-1-era state.)*
   CI-harness databases on the identical recipe.
 - New ZIP SHA-256 **`b0cd78a658dc5a8b125ecbbe1017b8ae7f62401bdc7a61ae78a0201dc4a849f0`**
   (4,106,381 bytes, 1,308 files) — superseded the same day by documentation-only
-  builds 6-8; the current artefact is **build 8**
-  `b249281c81269432950c644669ba3635f56e05b287366dc1835840db784098ab`
-  (4,107,190 bytes; changelog/doc10 clarifications + control-plane table-count fix
-  14 → 21; all intermediate builds kept as
-  `*.zip.bak-20261020-183756` / `-093116` / `-085852` / `-083633`). Build 4 kept as
+  builds 6-8 and, on 2026-10-21, by the tagged rebuild **build 9**
+  `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`
+  (4,107,274 bytes; annotated tag `v0.1.0-pre` recorded in `package-manifest.json`,
+  shipped tag statements updated; build 8 `b249281c…` was the changelog/doc10 +
+  control-plane table-count fix 14 → 21; all intermediate builds kept as
+  `*.zip.bak-20261021-075532` / `-20261020-183756` / `-093116` / `-085852` / `-083633`).
+  Build 4 kept as
   `*.zip.bak-20261020-083633`; earlier baks unchanged. `release/SHA256SUMS.txt`
   matches; clean extraction byte-identical to the staging tree; shipped
   `tools/verify-package.php` re-run inside the extracted ZIP: **35/35**.

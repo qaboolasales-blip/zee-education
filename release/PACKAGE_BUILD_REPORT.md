@@ -13,11 +13,35 @@ It is **not** marked READY because the repository is **not** at
 > Section 17b describes **BUILD 5 (2026-10-20)**, now superseded.
 > Section 17c describes **BUILD 6 (2026-10-20)**, now superseded.
 > Section 17d describes **BUILD 7 (2026-10-20)**, now superseded.
-> The current artefact is **BUILD 8 (2026-10-20)**; its figures are in section 17e.
+> The current artefact is **BUILD 9 (2026-10-21)**; its figures are in section 17g.
+> Section 17e describes **BUILD 8 (2026-10-20)**, now superseded.
 
 ---
 
-## 17e. BUILD 8 — 2026-10-20 (current)
+## 17g. BUILD 9 — 2026-10-21 (current)
+
+Tagged rebuild cut **from the annotated tag `v0.1.0-pre`** (commit `b1267df…`): the
+tag round changed no application code — only the shipped honesty statements about
+Git tagging (`README_FIRST.txt`, `CHANGELOG.md`, `documentation/10`,
+`documentation/index.html`), the `build-package.ps1` manifest logic (was a hardcoded
+`git_tag = null`, now records the tag pointing at HEAD), and repo-side records.
+Suites re-run green at the tag round: backend `OK (164 tests, 673 assertions)`,
+frontend `816/816`. Inside this ZIP, `package-manifest.json` records
+`"git_tag": "v0.1.0-pre"` and `git_commit` equal to the tag commit, and zero stale
+"no Git tag" claims remain in the shipped text.
+
+| Item | Value |
+|---|---|
+| ZIP name | `Zee_Education_v0.1.0_Hostinger_Installer.zip` |
+| Git tag / commit | **`v0.1.0-pre`** (annotated) → `b1267dfba2ac22b8de2aec9ba913e4e8d9ad179f` |
+| ZIP size | 4,107,274 bytes (3.92 MB) |
+| ZIP files | 1,308 |
+| **ZIP SHA-256** | `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c` |
+| Build 8 kept as | `Zee_Education_v0.1.0_Hostinger_Installer.zip.bak-20261021-075532` (4,107,190 bytes, `b249281c…`) |
+| Verification | build-package.ps1 verifier **35/0**; `SHA256SUMS.txt` matches live hash; clean extraction **byte-identical** to staging (recursive tree hash `16ace5caf52f6c8…`, 1,308 files both sides); shipped `tools/verify-package.php` re-run inside the extracted ZIP: **35/0**; manifest `git_tag=v0.1.0-pre`; tag text present in all 5 shipped spots; 0 stale "no Git tag" claims inside the package |
+| Tests | backend `OK (164 tests, 673 assertions)`, frontend `816/816` (re-run at the tag round) |
+
+## 17e. BUILD 8 — 2026-10-20 (superseded by build 9)
 
 Third documentation-only pass over build 5's code: corrects stale control-plane
 **table counts** in two shipped docs. The 2026-10-18 live drill recorded 14
@@ -488,9 +512,10 @@ it is still a pre-release that has not been deployed or smoke-tested end to end.
 2. Role smoke tests were never run. Without accounts for Super Admin, School Admin,
    Teacher, Parent and Student there is no evidence that attendance, results, manual fees,
    report/PDF export or role-restricted access work end to end.
-3. **No Git tag exists.** The working tree had **98 changed/untracked entries** at build
-   time. This package cannot be reproduced from a tagged commit, and
-   `package-manifest.json` records `"git_tag": null`.
+3. ~~**No Git tag exists.**~~ **Closed 2026-10-21:** tree committed + pushed, annotated
+   tag `v0.1.0-pre` created (commit `b1267df…`), and build 9 rebuilt from that tag —
+   `package-manifest.json` now records `"git_tag": "v0.1.0-pre"` (build 3, whose
+   figures this list accompanied, had 98 dirty entries and `"git_tag": null`).
 4. No independent third-party Hostinger account test. Compatibility was validated against
    the vendor's own live hosting account and locally — not against a fresh buyer purchase.
 
@@ -771,7 +796,9 @@ package tells buyers to check first.
 
 **Owner actions, in order:**
 
-1. Commit the working tree and create a Git tag. Rebuild so the manifest is not `null`.
+1. ~~Commit the working tree and create a Git tag. Rebuild so the manifest is not `null`.~~
+   **Done 2026-10-21:** tree committed + pushed, annotated tag `v0.1.0-pre` created,
+   build 9 rebuilt from it — the manifest now records the tag (`§17g`).
 2. Create the five role accounts and run the smoke tests. This is the real remaining
    release gate.
 3. Rotate the SSH password that was exposed earlier in chat, and delete the plain-text
@@ -782,7 +809,8 @@ package tells buyers to check first.
 **Known limitations of 0.1.0:**
 
 - role smoke tests unverified
-- no Git tag (source now committed and pushed to `github.com/qaboolasales-blip/zee-education` — content commit `8560225` — but no tag exists yet)
+- still a **pre-release**: the source is tagged `v0.1.0-pre` (a pre-release tag, not a
+  stable-release tag)
 - manual or cron backups only, no scheduler UI
 - manual licence handling, no activation
 - no automated update path

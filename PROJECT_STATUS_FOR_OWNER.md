@@ -6,7 +6,7 @@ Updated: 2026-10-20
 
 PROJECT STATUS: **BLOCKED** — the product works and its package verifies clean, but the
 release gate has never been passed: no live smoke test of the current build, no
-owner-approved role accounts for the role smoke tests, no Git tag, and one exposed
+owner-approved role accounts for the role smoke tests, and one exposed
 password is still unrotated.
 
 ## 2. What is genuinely complete and evidenced
@@ -33,12 +33,15 @@ password is still unrotated.
   behavioural tests (`ProvisioningIdempotencyTest`) covering DB rejection of
   duplicate keys, duplicate school-code refusal and the completed-school re-provision
   no-op.
-- Package (build 8, 2026-10-20): `build-package.ps1` verifier **35 checks, 0 failures, 0
+- Package (build 9, 2026-10-21, built from annotated tag `v0.1.0-pre`): `build-package.ps1`
+  verifier **35 checks, 0 failures, 0
   warnings** on the build tree; clean extraction proven byte-identical to staging
   (matching recursive tree hash, 1,308 files); shipped `tools/verify-package.php`
   re-run inside the extracted ZIP: **35/35**.
-  ZIP SHA-256 `b249281c81269432950c644669ba3635f56e05b287366dc1835840db784098ab`
-  (4,107,190 bytes; supersedes builds 7/6/5 (`11fb712e…` / `d1f3df4f…` / `b0cd78a6…`,
+  ZIP SHA-256 `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`
+  (4,107,274 bytes; `package-manifest.json` records `git_tag: v0.1.0-pre` + commit
+  `b1267df…`; supersedes build 8 (`b249281c…`, kept as `*.zip.bak-20261021-075532`) and
+  builds 7/6/5 (`11fb712e…` / `d1f3df4f…` / `b0cd78a6…`,
   kept as `*.zip.bak-20261020-183756` / `-093116` / `-085852`); builds 6-8 were
   documentation-only corrections (licence-limitation wording, changelog/doc10
   clarifications, control-plane table count 14 → 21). Builds 4/3/2/1 kept as
@@ -73,14 +76,14 @@ password is still unrotated.
   that do not send tokens" was resolved by the client audit
   (`quality/docs/csrf-client-audit.md`): every live HTML form already carries
   `csrf_field()`, and the portal/PWA shells contain zero mutating client code — so
-  nothing broke, and the suite is green at 164/671 with the filter on. Remaining CSRF
+  nothing broke, and the suite is green at 164/673 with the filter on. Remaining CSRF
   hardening (recorded limitations, not gaps): `tokenRandomize=false` and no CSP
   (needs per-view nonces).
 - The CI workflow now exists (`.github/workflows/ci.yml`: PHP 8.3 + the required
   extensions, MySQL 8.0 service, Node 24) and its exact backend recipe was validated
   locally from **empty** databases on 2026-10-20 (control/test migrations + plan seed +
   separate school schema + suite `OK (155 tests, 621 assertions)` — the suite has since
-  grown to **164/671** with the security-header and connect-API tests, and was
+  grown to **164/673** with the security-header and connect-API tests, and was
   re-validated from fresh empty harness DBs in the build-5 CSRF round, green on the same
   recipe). It ran for the first time on a remote runner on **2026-10-21** — the repository
   was pushed to `github.com/qaboolasales-blip/zee-education` and GitHub Actions run
@@ -92,11 +95,11 @@ password is still unrotated.
 1. **No live smoke test of the current build** — this is the main remaining gate.
 2. **No role smoke tests** — attendance, results, manual fees, report/PDF export and
    role-restricted access are unverified end to end.
-3. **No Git tag.** The working tree is now committed and pushed to
-   `github.com/qaboolasales-blip/zee-education` (content commit `8560225`, CI fixes
-   `379c7b7`, branch `main`) — build 8's source is reproducible from that commit —
-   but no tag has been created yet, so `package-manifest.json` still records
-   `"git_tag": null` until the owner tags a release.
+3. ~~No Git tag~~ — **closed 2026-10-21:** annotated tag **`v0.1.0-pre`** (commit
+   `b1267df…`) pushed to `github.com/qaboolasales-blip/zee-education`, and build 9 was
+   rebuilt from that tag so `package-manifest.json` records
+   `"git_tag": "v0.1.0-pre"` (build 8 recorded `null`). The tag is a pre-release
+   tag, not a stable-release tag.
 4. **The SSH password exposed earlier in chat has still not been rotated by the owner.**
    That credential is live.
 5. No independent third-party Hostinger buyer-account test.

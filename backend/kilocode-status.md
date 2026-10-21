@@ -21,7 +21,7 @@
 - Status: COMPLETE
 - Completed: 2026-10-17
 - All tasks: C-K-01 - C-K-10 ✓
-- Tests: All backend tests pass (**164 tests / 671 assertions / 0 skipped** as of the 2026-10-20 build-5 CSRF round; evolved 36/36 → 155/621 → 161/653 → 164/671); frontend `npm run check` 816/816; live security probe 39/39 PASS
+- Tests: All backend tests pass (**164 tests / 673 assertions / 0 skipped** as of the 2026-10-21 tag round; evolved 36/36 → 155/621 → 161/653 → 164/671 → 164/673); frontend `npm run check` 816/816; live security probe 39/39 PASS
 - External blockers: None
 - Report: backend/kilocode-batch-c-report.md
 

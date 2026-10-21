@@ -82,9 +82,10 @@ php -d extension=php_intl.dll -d extension=mysql backend/vendor/bin/phpunit -c b
 ## Update 2026-10-20 — CI recipe validation and a `spark`/`testing` quirk
 
 The numbers above are the original 2026-10-17 audit (27 tests); the current suite is
-164 tests / 671 assertions (155/621 when this section was written, before
+164 tests / 673 assertions (155/621 when this section was written, before
 `SecurityHeadersRuntimeTest` landed; 161/653 after the security round; +3
-`ConnectApiTest` in the build-5 CSRF round, green **with the global `csrf`
+`ConnectApiTest` in the build-5 CSRF round → 164/671; +2 assertions in the
+2026-10-21 tag-round `ConnectTest` rewrite → 164/673, green **with the global `csrf`
 filter enabled**). Two new environment facts were established while authoring
 `.github/workflows/ci.yml`:
 

@@ -57,10 +57,10 @@
 
 The 2026-10-17 table is history; this section states each blocker's current truth.
 Evidence: `backend/FINAL_RELEASE_AND_PILOT_REPORT.md`, `ops/release-gates.md`
-(re-evaluated same day), backend suite **164/671** (161/653 before the build-5
+(re-evaluated same day), backend suite **164/673** (161/653 before the build-5
 CSRF round), frontend **816/816**, package verifier **35/35** (current artifact:
-**build 8**, `b249281c…` — builds 6-8 were doc-only successors to build 5;
-SHA/size/verification block in `release/PACKAGE_BUILD_REPORT.md` §17e).
+**build 9**, `46f5a487…` — tagged `v0.1.0-pre`; builds 6-9 were doc/tag-only successors to build 5;
+SHA/size/verification block in `release/PACKAGE_BUILD_REPORT.md` §17g).
 
 | ID | State 2026-10-20 | Evidence |
 |----|-------------------|----------|

@@ -1,19 +1,20 @@
 # Zee Education v0.1.0 — Release Notes
 
-**Build date:** 2026-10-20 (build 8; rebuilds builds 7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
+**Build date:** 2026-10-21 (build 9; rebuilds build 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
 **Package:** `Zee_Education_v0.1.0_Hostinger_Installer.zip`
-**Commit:** `0ee7a233b493921c54795f6441acbaeb4537d281`
-**SHA-256:** `b249281c81269432950c644669ba3635f56e05b287366dc1835840db784098ab`
+**Commit:** `b1267dfba2ac22b8de2aec9ba913e4e8d9ad179f` (tag `v0.1.0-pre`)
+**SHA-256:** `46f5a4877618e3d0ae253781b1e34219d8dd67a02f0b2084d5e90d23db99186c`
 (verify with `sha256sum` against `SHA256SUMS.txt`, then run `php tools/verify-package.php`)
-**Release type:** PRE-RELEASE — **no Git tag exists**
+**Release type:** PRE-RELEASE — tagged **`v0.1.0-pre`** (pre-release tag, not a stable release)
 **Installation mode:** Platform Owner / Super Admin control plane
 
 ---
 
 ## Read this first
 
-This is a **pre-release**, not a tagged release. The working tree was **not fully
-committed** when the package was produced. Treat it as an early build for a controlled
+This is a **pre-release**, tagged `v0.1.0-pre` (a pre-release tag, not a stable
+release). The source tree is committed and pushed to GitHub; the tag points at the
+exact commit this package was built from. Treat it as an early build for a controlled
 pilot. `PACKAGE_BUILD_REPORT.md` records exactly what was and was not verified.
 
 No claim is made about CodeCanyon approval or any marketplace review. This is a
@@ -147,8 +148,9 @@ features were added. Full reasoning: `PACKAGING_DECISIONS.md` §9.
 **Verified for this build:** `verify-package.php` 35/35 clean on the build tree
 *and* byte-identical extraction (1,308 files); reference UI hashes 3/3 unchanged; no real
 `.env`, no private keys, no hosting account id, no pilot test data anywhere in the package;
-backend tests **164 tests / 671 assertions / 0 skipped / 0 failures** (green with the global
-CSRF filter enabled; CI empty-DB recipe re-validated at the same counts); a 39-check live
+backend tests **164 tests / 673 assertions / 0 skipped / 0 failures** (green with the global
+CSRF filter enabled; CI empty-DB recipe re-validated at the same counts; 671 assertions
+before the 2026-10-21 tag-round `ConnectTest` rewrite); a 39-check live
 runtime security matrix passed (incl. session-fixation checks SF-01/SF-02 and the global-CSRF
 polarity checks `I1`/`I2`/`I3`; repo-only evidence: `quality/docs/security-runtime-review.md`).
 
@@ -185,7 +187,7 @@ through server-local `.env` configuration.
   `{error: csrf_required}` contract is unchanged. Defence in depth on top: the session
   cookie is `SameSite=Lax` + `HttpOnly`, which browsers refuse to attach to cross-site
   POSTs.
-- No Git tag, so the deployment is not reproducible from a tagged commit.
+- The Git tag `v0.1.0-pre` is a **pre-release** tag, not a stable-release tag.
 - Backups are manual or cron-based; there is no built-in backup scheduler UI.
 - No automated update mechanism.
 - Licence activation and billing are **implemented** (licence plans, school licences,
@@ -215,8 +217,8 @@ Business API · native app-store packaging
    `/api/connect/resolve` and `/api/connect/verify` return JSON (they were `500`
    before this build).
 4. Re-run backup/restore on both databases and verify them clean of pilot data.
-5. Commit the working tree and create a Git tag, then rebuild so the manifest is not
-   `null`.
+5. (done 2026-10-21) The working tree is committed and tagged `v0.1.0-pre`;
+   build 9 was rebuilt from the tag so `package-manifest.json` records it.
 6. Run the role smoke tests with real pilot accounts.
 7. Have a second person run `php tools/verify-package.php` on the received ZIP and compare
    its SHA-256 with `SHA256SUMS.txt`.

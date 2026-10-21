@@ -109,9 +109,9 @@ UI lock               3 / 3 unchanged
 --------------------------------------------------------------------------
 ## STILL OPEN
 --------------------------------------------------------------------------
-- No Git tag. The working tree has since been committed and pushed to GitHub
-  (content commit `8560225`, 2026-10-21), but no tag exists — this build is
-  still a pre-release and cannot be reproduced from a *tagged* commit.
+- ~~No Git tag.~~ Closed 2026-10-21: annotated tag `v0.1.0-pre` (commit `b1267df…`)
+  pushed to GitHub; build 9 rebuilt from it so the manifest records the tag. It is
+  a pre-release tag, not a stable-release tag.
 - The phpunit test database is not migrated (see M4).
 - The SSH password exposed earlier in chat has still not been rotated by the
   owner. That credential is live.
