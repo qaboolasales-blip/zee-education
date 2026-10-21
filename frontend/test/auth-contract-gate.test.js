@@ -152,11 +152,14 @@ describe('B-O-01 — published auth contract state', () => {
       'students',
       'students',
       'invoices',
-      'api/school',
+      // G6: staff and fees routes moved into the school-admin-only group, so
+      // the second api/school literal now follows them (paths unchanged;
+      // attendance keeps school_admin,teacher).
       'staff',
-      'attendance',
       'fees/invoices',
       'fees/receipts',
+      'api/school',
+      'attendance',
       'api/health',
       'api/connect',
       'resolve',
