@@ -114,8 +114,9 @@ deployment. See DEEP_CODE_SCAN.md at the project root for the full before/after 
 Production evidence: role smoke 12/12, write API 5/5, mobile 6/6, seeding + idempotency,
 one-school-one-database separation, UI lock 3/3 unchanged, backend 69 tests / 175 assertions.
 
-Still open: no Git tag (90+ uncommitted), phpunit test DB not migrated, and the
-previously exposed SSH password still needs rotating by the owner.
+Still open: no Git tag (the tree was committed and pushed to GitHub on 2026-10-21,
+but no tag exists yet), phpunit test DB not migrated, and the previously exposed SSH
+password still needs rotating by the owner.
 
 ## Package rebuild pass (2026-10-20, build 3) — PRODUCTION NOT TOUCHED
 

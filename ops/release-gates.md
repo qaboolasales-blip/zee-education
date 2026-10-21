@@ -3,7 +3,7 @@
 - Agent: Cline (QA, Security & Operations owner)
 - Microtask: **C-02.3** (Batch A)
 - Created: 2026-10-17
-- **Last re-evaluated: 2026-10-20** (gates doc rule: re-evaluate at every pilot review)
+- **Last re-evaluated: 2026-10-21** (gates doc rule: re-evaluate at every pilot review)
 - Purpose: objective, binary conditions that must all be **GO** before a pilot is approved. Each gate names its pass criterion and its current status with evidence. A gate that cannot be evaluated yet is **NO-GO (blocked)**, not "assumed OK."
 
 ## How to use
@@ -17,12 +17,12 @@
 ### G1 — Environment / toolchain ready
 - **Pass criterion:** Backend suite runs green using a pinned PHP with `intl`, `mysqli`, `pdo_mysql`, `mbstring`, `openssl`, `curl`, `dom`, `xml`, `fileinfo`, `gd`, `zip`; MySQL/MariaDB starts; `.env` present locally with an explicit/empty CORS allowlist (no `*`).
 - **Evidence:** `ops/windows-laragon-preflight.md` checklist; `phpunit` → `OK`; a CI/runner record pinning the runtime.
-- **Current status (2026-10-20):** **NO-GO (runner definition now exists; remote run pending).** Suite green on PHP 8.3.33 CLI: `OK (161 tests, 653 assertions)` at the security round — **after the build-5 CSRF round: `OK (164 tests, 671 assertions)`** (recorded in `backend/FINAL_RELEASE_AND_PILOT_REPORT.md`); frontend green on Node via `npm run check` → 816/816. The pin is now formalised as code: `.github/workflows/ci.yml` pins PHP `8.3` with exactly the extension list in the pass criterion, a MySQL 8.0 service, and a Node 24 frontend job. Its complete backend recipe was **validated locally from empty databases on 2026-10-20**: Shield+Settings+App (20 migrations) into `zee_ci`, `LicensePlansSeeder`, 8 `AppSchool` migrations into a separate `zee_ci_school`, then `OK (155 tests, 621 assertions)` with the control/test histories confirmed untouched (20/20 rows); **re-run from fresh empty `zee_ci`/`zee_ci_school` after the security round (same day): `OK (161 tests, 653 assertions)`** on the identical recipe — **and re-run again in the build-5 CSRF round: `OK (164 tests, 671 assertions)`** from fresh empty harness DBs. → **NO-GO until the workflow produces its first remote run log** (the repository currently has no git remote; needs the owner to push).
+- **Current status (2026-10-21):** **GO (first remote run green).** Local history: suite green on PHP 8.3.33 CLI: `OK (161 tests, 653 assertions)` at the security round — **after the build-5 CSRF round: `OK (164 tests, 671 assertions)`** (recorded in `backend/FINAL_RELEASE_AND_PILOT_REPORT.md`); frontend green on Node via `npm run check` → 816/816. The pin is formalised as code: `.github/workflows/ci.yml` pins PHP `8.3` with exactly the extension list in the pass criterion, a MySQL 8.0 service, and a Node 24 frontend job; its complete backend recipe was validated locally from empty databases on 2026-10-20 (twice re-validated, last in the build-5 CSRF round: `OK (164 tests, 671 assertions)` from fresh `zee_ci`/`zee_ci_school`). **Closure evidence (2026-10-21):** repository pushed to `github.com/qaboolasales-blip/zee-education` (branch `main`, commits `8560225` + `379c7b7`); workflow's **first remote run — GitHub Actions run `39534195074` — completed SUCCESS** with both jobs green: "Backend suite (PHP 8.3, MySQL 8)" (pinned runtime recorded, harness recipe executed, suite 164 tests / 0 failures) and "Frontend gates (Node 24)" (816/816).
 
 ### G2 — Automated test suite green
 - **Pass criterion:** The backend test suite passes (0 failures/errors) on the pinned runtime, and grows to cover implemented features.
 - **Evidence:** CI/test log.
-- **Current status (2026-10-20):** **NO-GO (coverage criterion met; pinned run outstanding).** Backend `164/671, 0 skipped, 0 failures` (161/653 before the build-5 CSRF round) covering authz, tenant isolation, migrations, licence enforcement (11 tests), billing API contract (20 tests), provisioning idempotency (5 tests), security headers/CORS runtime (6 tests), connect API contract (3 tests) and PWA; frontend `816/816` incl. role-guard and contract gates. The remaining gap to GO is now only the remote log: `.github/workflows/ci.yml` runs the exact same commands on the pinned runtime and its recipe passes locally from a clean schema (2026-10-20), but no run has executed on a runner yet.
+- **Current status (2026-10-21):** **GO (coverage met and the remote log now exists).** Backend `164/671, 0 skipped, 0 failures` (161/653 before the build-5 CSRF round) covering authz, tenant isolation, migrations, licence enforcement (11 tests), billing API contract (20 tests), provisioning idempotency (5 tests), security headers/CORS runtime (6 tests), connect API contract (3 tests) and PWA; frontend `816/816` incl. role-guard and contract gates. **Closure evidence (2026-10-21):** GitHub Actions run `39534195074` (first run after the push, sha `379c7b7`) finished **SUCCESS** — backend job green on the pinned runtime (164 tests, 0 failures/errors) and frontend job green (816/816). Two CI-only failures found on the very first attempt (missing `writable/install.lock` in checkout; a Windows-only path-literal contract test) were fixed in `379c7b7` and the re-run was fully green.
 
 ### G3 — Reference UI lock intact
 - **Pass criterion:** `node frontend/tools/verify-reference-ui.mjs` → `UI LOCK OK — 3/3` (exit 0); no unauthorised change to the three approved files.
@@ -73,8 +73,8 @@
 
 | Gate | Topic | Status |
 |------|-------|--------|
-| G1 | Environment/toolchain | NO-GO (workflow authored + recipe validated from empty DBs; first remote run pending) |
-| G2 | Test suite coverage | NO-GO (coverage met: 161 + 816; pinned runner ready — remote log pending) |
+| G1 | Environment/toolchain | **GO** (pinned workflow; first remote run green — run `39534195074`, 2026-10-21) |
+| G2 | Test suite coverage | **GO** (coverage 164 + 816; remote log green — run `39534195074`, 2026-10-21) |
 | G3 | UI lock (byte) | **GO** (3/3 verified 2026-10-20) |
 | G3b | UI pixel regression | NO-GO (never executed; criterion may be redefined by owner) |
 | G4 | No secrets/real data (repo + package) | **GO** (scans executed 2026-10-19/20; verifier 35/35) |

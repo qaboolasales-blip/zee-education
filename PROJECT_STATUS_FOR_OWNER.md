@@ -82,17 +82,21 @@ password is still unrotated.
   separate school schema + suite `OK (155 tests, 621 assertions)` — the suite has since
   grown to **164/671** with the security-header and connect-API tests, and was
   re-validated from fresh empty harness DBs in the build-5 CSRF round, green on the same
-  recipe). It has never run on
-  a remote runner — the repository has no git remote — so gates G1/G2 stay NO-GO until
-  the owner pushes and the first run logs green.
+  recipe). It ran for the first time on a remote runner on **2026-10-21** — the repository
+  was pushed to `github.com/qaboolasales-blip/zee-education` and GitHub Actions run
+  `39534195074` (sha `379c7b7`) finished **green on both jobs** — so gates **G1/G2 are
+  now GO** (evidence in `ops/release-gates.md`).
 
 ## 4. What is not complete / blocked
 
 1. **No live smoke test of the current build** — this is the main remaining gate.
 2. **No role smoke tests** — attendance, results, manual fees, report/PDF export and
    role-restricted access are unverified end to end.
-3. **No Git tag.** The working tree has ~171 uncommitted entries, so nothing is
-   reproducible from a tag and `package-manifest.json` records `"git_tag": null`.
+3. **No Git tag.** The working tree is now committed and pushed to
+   `github.com/qaboolasales-blip/zee-education` (content commit `8560225`, CI fixes
+   `379c7b7`, branch `main`) — build 8's source is reproducible from that commit —
+   but no tag has been created yet, so `package-manifest.json` still records
+   `"git_tag": null` until the owner tags a release.
 4. **The SSH password exposed earlier in chat has still not been rotated by the owner.**
    That credential is live.
 5. No independent third-party Hostinger buyer-account test.

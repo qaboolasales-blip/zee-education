@@ -1,4 +1,4 @@
-# DEEP CODE SCAN — FIX REPORT
+# DEEP CODE SCAN ï¿½ FIX REPORT
 Date: 2026-10-19
 Scope: 9 automated passes over backend app/, tests/, docs/, migrations vs live DB, routes, security
 
@@ -12,7 +12,7 @@ Scope: 9 automated passes over backend app/, tests/, docs/, migrations vs live D
 - Backend tests: 69 tests / 175 assertions / 0 failures (was 62/146)
 
 --------------------------------------------------------------------------
-## HIGH — ALL FIXED
+## HIGH ï¿½ ALL FIXED
 --------------------------------------------------------------------------
 H1. NO BUSINESS WRITE ENDPOINTS EXISTED.        -> FIXED
     Added app/Controllers/SchoolApi.php + app/Libraries/SchoolRecordService.php.
@@ -51,7 +51,7 @@ H4. seedSchoolDefaults() SEEDED NOTHING.            -> FIXED
     NOT delete the 2 student rows that already existed.
 
 --------------------------------------------------------------------------
-## MEDIUM — ALL FIXED
+## MEDIUM ï¿½ ALL FIXED
 --------------------------------------------------------------------------
 M1. ORPHAN EMPTY DIRECTORIES                      -> FIXED
     Removed app/Controllers/SchoolLocal and app/SchoolLocal/Database.
@@ -89,7 +89,7 @@ M5. NO MOBILE / PWA IMPLEMENTATION                -> FIXED
     PROVEN ON PRODUCTION: mobile test 6/6 passed, zero demo strings served.
 
 --------------------------------------------------------------------------
-## LOW — FIXED
+## LOW ï¿½ FIXED
 --------------------------------------------------------------------------
 L1. One backend test still skipped (environment-dependent) - unchanged.
 L2. Stale "environment": "development" in openapi-v0.md - corrected.
@@ -109,8 +109,9 @@ UI lock               3 / 3 unchanged
 --------------------------------------------------------------------------
 ## STILL OPEN
 --------------------------------------------------------------------------
-- No Git tag. The working tree has 90+ uncommitted changes, so this build is
-  still a pre-release and cannot be reproduced from a tagged commit.
+- No Git tag. The working tree has since been committed and pushed to GitHub
+  (content commit `8560225`, 2026-10-21), but no tag exists â€” this build is
+  still a pre-release and cannot be reproduced from a *tagged* commit.
 - The phpunit test database is not migrated (see M4).
 - The SSH password exposed earlier in chat has still not been rotated by the
   owner. That credential is live.

@@ -43,6 +43,21 @@ over unchanged (164/671 with the global CSRF filter, probe 39/39, frontend
 | Verification | build-package.ps1 verifier **35/0**; `SHA256SUMS.txt` matches live hash; clean extraction **byte-identical** to staging (recursive tree hash `6e019bf96b0fb411…`, 1,308 files both sides); shipped `tools/verify-package.php` re-run inside the extracted ZIP: **35/0**; README/doc03/CHANGELOG fixes confirmed inside the package |
 | Tests | unchanged from build 5: backend `OK (164 tests, 671 assertions)` (dev env + fresh-empty-harness CI recipe), frontend `816/816`, probe `39/39` |
 
+## 17f. Repository push + first remote CI run (2026-10-21)
+
+Not a rebuild — the build-8 ZIP is unchanged (no shipped file has been touched
+since build 8; the files below are repo-side tests, CI and records only).
+
+| Item | Value |
+|---|---|
+| Remote | `https://github.com/qaboolasales-blip/zee-education` (**public**), branch `main` |
+| Commits | `8560225` "Batch security rounds + release build 8" (215 files — all security rounds, build-8 docs/records, root `.gitignore`); `379c7b7` "CI: fix first remote run failures" |
+| Root `.gitignore` (new) | excludes `release/staging/`, `release/*.zip` (+ `.bak-*`), `.env` (keeps `.env.example`), `release/backups/*.sql` (local pilot dump — test user bcrypt hash — deliberately **not** committed), `backend/writable/install.lock`, `node_modules/` |
+| Credentials | GitHub PAT (scopes `repo`, `workflow`) stored through git's credential helper (Windows Credential Manager) — never written to any tracked file; commit identity `Ghulam sabir <qaboolasales-blip@users.noreply.github.com>` (repo-local config) |
+| First CI attempt | FAILED (run `39532864265`): fresh checkout has no `writable/install.lock` → portal routes unregistered (`AuthTest` ×2), and `ConnectTest` asserted `imagick` absent from the runner's php.ini; frontend contract gate used Windows-only backslash path literals. All three were CI-only — local suites were green throughout. |
+| Fix + re-run | `379c7b7` (create `writable/install.lock` before the suite; make the QR test environment-independent; POSIX paths in the contract gate) → **run `39534195074`: SUCCESS — backend job green (164 tests, 0 failures), frontend job green (816/816)** |
+| Gates impact | **G1 and G2 closed** (evidence in `ops/release-gates.md`); G3b/G6-G10 unchanged (owner/live-only) |
+
 ## 17d. BUILD 7 — 2026-10-20 (superseded by build 8)
 
 Second and final documentation pass over build 5's code (no shipped code changed
@@ -767,7 +782,7 @@ package tells buyers to check first.
 **Known limitations of 0.1.0:**
 
 - role smoke tests unverified
-- no Git tag; not reproducible from a commit
+- no Git tag (source now committed and pushed to `github.com/qaboolasales-blip/zee-education` — content commit `8560225` — but no tag exists yet)
 - manual or cron backups only, no scheduler UI
 - manual licence handling, no activation
 - no automated update path

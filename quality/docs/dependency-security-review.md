@@ -45,7 +45,7 @@ Consolidates `security-config-review.md` (B-C-04):
 
 1. **Live authZ role matrix not executed** (G6, never-waivable) — highest risk; implementation + negative tests exist (2026-10-20).
 2. **CSP nonces + `tokenRandomize`** — remaining hardening actions before prod; global/login CSRF **closed 2026-10-20** (build-5 round, probe `I1`/`I2`/`I3` + suite 164/671), alongside the already-closed secure headers and `cookie.secure` mechanism (RB-7 fully closed; residuals = SC-6 + SC-2).
-3. **PATH-PHP missing `intl`** — env fix (use Laragon PHP); not a code defect. Addressed in CI by the pinned runtime (`.github/workflows/ci.yml`, G1/G2 pending first remote run).
+3. **PATH-PHP missing `intl`** — env fix (use Laragon PHP); not a code defect. Addressed in CI by the pinned runtime (`.github/workflows/ci.yml`, G1/G2 closed by the first remote run `39534195074` — green — on 2026-10-21).
 4. **No provisioning idempotency guard** (R-2) — **closed 2026-10-20** (RB-4: migration `2026-10-20_000016` + `ProvisioningIdempotencyTest`).
 5. `composer audit`/dependency CVE scan not yet run (needs network/CI).
 

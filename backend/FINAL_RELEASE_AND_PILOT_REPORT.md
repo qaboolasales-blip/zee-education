@@ -274,9 +274,14 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   extension-pinned, MySQL 8.0 service, Node 24 job) and its full backend recipe was
   validated locally from empty databases (`zee_ci` + separate `zee_ci_school`:
   20 control migrations, plan seed, 8 AppSchool migrations, `OK (155 tests, 621
-  assertions)`, control/test histories untouched). G1/G2 remain NO-GO only because no
-  run has executed on a remote runner yet — the repository has no git remote, so the
-  first owner push closes them.
+  assertions)`, control/test histories untouched). Update 2026-10-21: the repository
+  was pushed to `github.com/qaboolasales-blip/zee-education` (branch `main`, content
+  commit `8560225` + CI fixes `379c7b7`) and the workflow's **first remote run was
+  green** — GitHub Actions run `39534195074`, both jobs SUCCESS (backend suite 164
+  tests / 0 failures on the pinned runtime; frontend 816/816). **G1/G2 are closed**;
+  evidence recorded in `ops/release-gates.md`. The first remote attempt exposed two
+  CI-only issues (missing `writable/install.lock` in a fresh checkout; a Windows-only
+  path-literal contract test) — both fixed in `379c7b7`, re-run green.
 - Consistency fixes made alongside: `ops/backup-restore-runbook.md` §5 (drill was in
   fact executed on live Hostinger; owner RPO/RTO still open), the tenant-isolation
   matrix header (T-1..T-24 still has no execution record), and
@@ -405,7 +410,10 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
 - Role smoke tests still never executed (no owner-approved role accounts).
 - QA matrices T-1..T-24 (isolation behaviour) and T-25..T-27 (licence expiry on a live
   school) never executed row-by-row — the evidence bars for gates G7/G8.
-- No Git tag; working tree has 171 uncommitted entries (raw `git status --porcelain`; grew
-  169 → 171 with `CsrfTokenTrait.php` + `ConnectApiTest.php` in the CSRF round; earlier
-  figures 167/168/169 were successive corrections/additions).
+- No Git tag. The working tree was committed and pushed to
+  `github.com/qaboolasales-blip/zee-education` on 2026-10-21 (content commit
+  `8560225`; CI fixes `379c7b7`), so build 8's source is reproducible from that
+  commit — but no tag exists and `package-manifest.json` still records
+  `"git_tag": null` until the owner creates one. (Historical: the tree was at
+  171 uncommitted entries at build-8 time.)
 - Exposed SSH password still not rotated by the owner.

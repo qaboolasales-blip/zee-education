@@ -23,6 +23,13 @@ files actually shipped in this ZIP include uncommitted work.
 
 This is stated here so no buyer is ever told the package came from a tagged release.
 
+**Update 2026-10-21:** the working tree has since been committed and pushed to
+`github.com/qaboolasales-blip/zee-education` (content commit `8560225`, CI fixes
+`379c7b7`, branch `main`; first remote CI run green). The "not committed" statements
+above described the tree when these builds were cut and remain true of the packages
+as built; build 8's source is now reproducible from commit `8560225`. Still true:
+there is **no Git tag**.
+
 ---
 
 ## 2. Install model supported
