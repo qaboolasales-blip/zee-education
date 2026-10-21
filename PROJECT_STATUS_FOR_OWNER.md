@@ -60,19 +60,24 @@ password is still unrotated.
   carrying the fix — is live now and passed the full smoke** (all five roles land on
   their approved surfaces, student create proven with SQL cleanup, control plane
   untouched). Full evidence: `PILOT_DEPLOYMENT_REPORT.md`. Still genuinely unverified:
-  attendance write (defect LB-2, open), the row-by-row role matrices (G6/G7/G8), the
-  pixel gate (G3b) and backup/restore owner sign-off (G9/G10).
+  attendance write (defect LB-2, open), the row-by-row role/isolation matrices (G6/G7),
+  the pixel gate (G3b) and backup/restore owner sign-off (G9/G10). Licence expiry rows
+  T-25..T-27 were executed live 2026-10-21 (G8 GO).
 - The 6 new licence migrations have never run against a live database (nor has
   migration `2026-10-20_000016`, the provisioning idempotency guard — both are
   covered only by local test databases).
-- Role smoke tests (Super Admin / School Admin / Teacher / Parent / Student) have never
-  run — no owner-approved accounts exist.
+- ~~Role smoke tests (Super Admin / School Admin / Teacher / Parent / Student) have never
+  run — no owner-approved accounts exist.~~ **Smoke ran 2026-10-21** (all five roles,
+  build 10 — see `PILOT_DEPLOYMENT_REPORT.md`); the five accounts were provisioned by
+  the agent for testing, so owner approval of the accounts is still open, and the
+  row-by-row role matrix (G6) has not yet been executed against them.
 - The QA matrices have not been executed row-by-row against live accounts:
   `quality/docs/tenant-isolation-test-matrix.md` T-1..T-24 (isolation is proven at the
   privilege layer and by automated tests, but the behavioural matrix has no execution
-  record) and T-25..T-27 (licence expiry on a live school; unit-level evidence exists).
-  `ops/release-gates.md` (re-evaluated 2026-10-20) tracks these — gates G6/G7/G8 are
-  still NO-GO for exactly these reasons.
+  record). T-25..T-27 (licence expiry on a live school) **were executed 2026-10-21** —
+  record in that document's §6.
+  `ops/release-gates.md` (re-evaluated 2026-10-21) tracks these — gates G6/G7 are
+  still NO-GO for exactly these reasons; **G8 is now GO**.
 - CSRF verification is now active **globally** (build 5, 2026-10-20): the school write
   API, `/admin/schools*` POSTs and Shield's own sign-in/2FA/magic-link forms all refuse
   token-less mutations with `403`; `/api/admin/billing/*` keeps its dedicated

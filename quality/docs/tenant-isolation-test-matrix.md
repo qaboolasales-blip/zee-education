@@ -3,7 +3,7 @@
 - Agent: Cline (QA, Security & Operations owner)
 - Microtask: **C-01.2** (Batch A)
 - Created: 2026-10-17
-- Status: **Planned checks.** Isolation cannot be executed yet: there is no school provisioning, no auth and no migrations (`backend/app/Database/Migrations`, `app/Models`, `app/Filters` are empty — see `quality/docs/current-state-audit.md` §2.2). This matrix defines exactly what Batch B (C-10.2) must execute once a second school and authentication exist.
+- Status: **Partially executed.** The licence rows **T-25..T-27 (§3.8) were executed on the live Hostinger deployment on 2026-10-21** — record in §6; gate G8 flipped to GO on that evidence. The isolation rows **T-1..T-24 remain planned checks** (gate G7). The original 2026-10-17 dependency note below ("no school provisioning, no auth and no migrations") is obsolete as of 2026-10-20: Shield auth, role filters, migrations, provisioning and one provisioned school now exist — what has never run is this matrix, row by row, against two live schools.
 - **Update 2026-10-20:** the original reason above is obsolete — provisioning, auth and
   migrations all exist now, and isolation was proven on a real Hostinger deployment at
   the **privilege layer** (0 school-local tables in the control plane, 0 control-plane
@@ -119,8 +119,45 @@ Every row in §3 is a **planned check**. "Expected" is the required outcome; "Ho
 - [ ] Authentication + server-side role filters (for sessions in §1).
 - [ ] At least two provisioned test schools with synthetic data.
 - [ ] Export, upload, job-queue and cache subsystems implemented (else their rows stay `N/A-now`).
-- [ ] Owner-approved license expiry behaviour that preserves data access/export (T-25..T-27).
+- [x] License expiry behaviour that preserves data access/export (T-25..T-27) — **executed live 2026-10-21, see §6** (owner still decides retention/RPO/RTO in G9/G10; the behavioural contract itself now has an execution record).
 
-Until those exist, this document is the authoritative plan; **no isolation claim is made or certified**.
+The first four dependencies still gate T-1..T-24; **until those are executed, no isolation claim is made or certified** for the isolation rows.
+
+## 6. Execution record — T-25..T-27 (gate G8), live 2026-10-21
+
+Executed against the live Hostinger deployment (build 10, commit `77739b6`, artefact
+`c31ad281…`), pilot school **id 3** (starter plan), control DB `u121986687_zee_control`,
+school DB `u121986687_zee_school_1`. Raw transcript: `~/g8_v2_evidence.txt` on the
+deployment host (script `/tmp/g8_license_matrix_v2.sh`). All SQL was run with fully
+qualified table names on a single connection per phase to avoid connection-burst noise.
+
+Procedure and results:
+
+| Step | Action | Result |
+|------|--------|--------|
+| Baseline | Licence row `1\|active\|2026-10-21\|2027-10-21\|2027-11-04\|14`; snapshot = `CHECKSUM TABLE` of all **22** school tables + per-table row counts + control counts (schools/users/licenses/invoices) in one connection | Captured (44-line snapshot) |
+| Flip | `UPDATE school_licenses SET expires_at='2026-10-01', grace_until='2026-10-15'` (past both dates → `LicenseService::state()` = `expired`) | Asserted applied before any probe (`EXPIRE_APPLIED_OK`) |
+| **T-25** | Fresh School-Admin login while expired, then reads: `GET /school` **200**, `GET /api/school/students` **200** with all rows (`id 2` present in body), `GET /api/school/invoices` **200**, `GET /m` **200**, login redirect chain `200 -> /school` | **ALLOW — PASS.** Expiry does not hide/delete own data; login and reads unaffected |
+| **T-27a** | Re-run the full snapshot (checksums + row counts + control counts) while expired | **`SNAPSHOT_IDENTICAL` — PASS.** Zero delete/encrypt/hide; expiry is a pure date comparison, no school-data mutation |
+| **T-27b** | `POST /api/school/students` (fresh CSRF token, expired licence) | **402** `{"error":"license_expired","message":"Your licence has expired. Your data is safe and readable. Renew to continue.","state":"expired","can_write":false,…}` — **write gated, reads never; PASS.** Zero G8 rows written (integrity also proves refusal did not touch the DB) |
+| **T-26** | `GET /api/school/students/export`, `/api/school/export`, `/api/school/reports`, `/api/school/fees/export` | All **404** — export subsystem not implemented → row recorded **N/A-now** (cannot be export-blocked when no export exists). Closest live egress (students list) still returned every row while expired, so nothing in the implemented read path is licence-gated |
+| Restore | `UPDATE` back to `2027-10-21`/`2027-11-04`; licence row compared to baseline | **`LICENCE_ROW_RESTORED_OK`** (byte-identical to baseline) |
+| Restore verification | `POST /api/school/students` → **200** `{ok:true, id:5}`; row deleted; final snapshot re-run | Write works again; **`FINAL_SNAPSHOT_MATCHES_BASELINE_OK`**; students = 2, zero `G8%` leftovers |
+
+Notes for the record:
+
+- **Super-Admin portal does not render licence-state text**: while expired, grepping the
+  rendered `/portal` HTML for `expired|grace|renewal due` matched nothing (a 2026-10-21
+  v1 run saw a stray "Renewal due" label, not reproducible — likely static UI copy).
+  Licence state is surfaced only at the write path (402 JSON) and in the control DB.
+  Recorded as a UX observation, **not** a gate defect: T-25/27 assert behaviour, not UI.
+- **v1 of this run is void**: the first script issued unqualified SQL
+  (`FROM school_licenses` with no DB selected → `ERROR 1046`, so the licence never
+  actually flipped) and burst ~100 short-lived `mysql` CLI connections, which triggered
+  a transient Hostinger connection refusal (`Operation not permitted`) surfacing as an
+  unrelated 500. v2 above (qualified SQL, one connection per phase, assert-before-probe)
+  is the evidence of record; the licence row and both databases were verified back to
+  baseline after v1.
+- T-1..T-24 are **not** covered by this record; they remain the G7 gate.
 
 

@@ -273,9 +273,11 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
   lock, 3/3) and G4 (no secrets/real data, repo + package scope, verifier 35/35).
   The stale 2026-10-17 reasons on G6–G9 ("no auth / no provisioning / no licensing /
   no drill exists") were corrected — the implementation now exists and is locally
-  tested — but each still fails its evidence bar: live T-matrix execution (G6, G7, G8),
+  tested — but each still fails its evidence bar: live T-matrix execution (G6, G7),
   owner RPO/RTO sign-off (G9, G10), CI runtime pin (G1, G2), runtime CORS asserts (G5),
-  pixel gate (G3b).
+  pixel gate (G3b). *(Update 2026-10-21: G1, G2, G5 already GO with remote runs/runtime
+  matrix; G8 cleared the same day by a live T-25..T-27 execution — see the status
+  section at the end of this file.)*
 - Overall pilot verdict in that document: **NO-GO**, consistent with
   `FINAL_RELEASE_STATUS: BLOCKED`.
 - Follow-up later the same day: `.github/workflows/ci.yml` was authored (PHP 8.3
@@ -429,8 +431,12 @@ and is green at 164/671 with the filter on, and the live probe verifies polarity
 - ~~Role smoke tests still never executed.~~ **Closed 2026-10-21 (live):** all five roles
   signed in on production and their landings/denials were verified. What remains open is
   the row-by-row role-permission matrix run (G6) and attendance write (defect LB-2, open).
-- QA matrices T-1..T-24 (isolation behaviour) and T-25..T-27 (licence expiry on a live
-  school) never executed row-by-row — the evidence bars for gates G7/G8.
+- QA matrices: **T-25..T-27 (licence expiry) executed live 2026-10-21** — expired
+  licence kept reads 200 with full rows, gated writes with 402 `license_expired`, left
+  a byte-identical 22-table checksum snapshot, restored cleanly (gate **G8 GO**; record:
+  `quality/docs/tenant-isolation-test-matrix.md` §6). T-1..T-24 (isolation behaviour)
+  never executed row-by-row — the evidence bar for gate **G7** (G6 role matrix likewise
+  open).
 - ~~No Git tag~~ — **closed 2026-10-21**: the tree was committed and pushed to
   `github.com/qaboolasales-blip/zee-education`, annotated tag **`v0.1.0-pre`** (commit
   `b1267df…`) was pushed, and build 9 was rebuilt from that tag so

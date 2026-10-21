@@ -57,7 +57,7 @@
 ### G8 — License expiry preserves data access/export
 - **Pass criterion:** Expiring/suspending a license never deletes, hides, encrypts or export-blocks a school's own data (T-25..T-27).
 - **Evidence:** executed T-25..T-27 record / owner-confirmed behaviour.
-- **Current status (2026-10-20):** **NO-GO (partial — implemented and unit-tested, rows not executed).** This gate's 2026-10-17 reason ("not implemented") is obsolete: `LicenseService`/`LicenseFilter` are implemented — expiry blocks **writes only**, never deletes or hides data, licence keys stored hashed, renewals rotate keys — and `LicenseEnforcementTest` (11 tests) passes. What has not been executed is the T-25..T-27 behavioural record on a live school. **Never waivable** (owner decision preserved). → NO-GO until the rows are executed and recorded.
+- **Current status (2026-10-21):** **GO — all three rows executed live and recorded.** T-25 (expired → fresh School-Admin login + reads: `/school`, students, invoices, `/m` all **200**, full rows present), T-27a (single-connection `CHECKSUM TABLE` of all 22 school tables + row counts + control counts **identical** before/during expiry — no delete/encrypt/hide), T-27b (`POST` while expired → **402** `license_expired`, `can_write:false`, zero rows written; reads never gated), T-26 (**N/A-now**: four export endpoints 404 — subsystem not implemented; the implemented read egress still returned all rows while expired). Licence row restored byte-identically; post-restore write proven 200 + cleaned; final snapshot matches baseline. Record: `quality/docs/tenant-isolation-test-matrix.md` §6; raw transcript `~/g8_v2_evidence.txt` on the deployment host. Backed by `LicenseEnforcementTest` (11) locally. **Never waivable** — evidence bar met 2026-10-21.
 
 ### G9 — Backup + proven restore drill
 - **Pass criterion:** Per-school backups exist; a **non-production restore drill** passes with objective verification (row counts, marker, file checksum, login) and meets `<<OWNER_RTO>>`/`<<OWNER_RPO>>`; retention/RPO/RTO owner-approved (`ops/backup-restore-runbook.md` §1,§5).
@@ -69,7 +69,7 @@
 - **Evidence:** owner sign-off.
 - **Current status (2026-10-20):** **NO-GO (open).** Multiple owner decisions outstanding, including rotation of the SSH password exposed earlier in chat.
 
-## Pilot go/no-go summary (as of 2026-10-20)
+## Pilot go/no-go summary (as of 2026-10-21)
 
 | Gate | Topic | Status |
 |------|-------|--------|
@@ -81,11 +81,11 @@
 | G5 | CORS + runtime security headers + session fixation | **GO** (runtime matrix **39/39**, final run incl. SF-01/SF-02 + global-CSRF `I` block + feature tests; ships in build 5 — CSRF/`ConnectApi` half; header/CORS half shipped build 4) |
 | G6 | AuthN/AuthZ | NO-GO (implemented + automated negatives green; live matrix pending accounts) |
 | G7 | Tenant isolation | NO-GO (proven at privilege layer + tests; T-matrix rows not executed) |
-| G8 | License data-access | NO-GO (implemented + 11 tests green; T-25..T-27 not executed live) |
+| G8 | License data-access | **GO** (T-25..T-27 executed live 2026-10-21; record in `tenant-isolation-test-matrix.md` §6) |
 | G9 | Backup + restore drill | NO-GO (drill executed; owner RPO/RTO sign-off open) |
 | G10 | Owner decisions | NO-GO (open, incl. SSH rotation) |
 
-**Overall: NO-GO for pilot.** G3, G4 and G5 are GO. The 2026-10-17 reasons for G6–G9 ("implementation does not exist") are all obsolete — the implementation now exists and is locally tested — but each still fails its evidence bar: live matrix execution (G6, G7, G8), owner sign-off (G9, G10), CI pin remote log (G1, G2), pixel gate (G3b). This matches `FINAL_RELEASE_STATUS: BLOCKED`.
+**Overall: NO-GO for pilot.** G1–G5 are GO (except G3b) and **G8 became GO on 2026-10-21** (live T-25..T-27 record). The 2026-10-17 reasons for G6–G9 ("implementation does not exist") are all obsolete — the implementation now exists and is locally tested — but the security/data gates that remain fail their evidence bar: live matrix execution (G6 role matrix, G7 isolation matrix T-1..T-24), plus owner sign-off (G9, G10) and the pixel gate (G3b). This matches `FINAL_RELEASE_STATUS: BLOCKED`.
 
 ## Rules
 

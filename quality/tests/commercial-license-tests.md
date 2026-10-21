@@ -40,11 +40,14 @@ and what this means for each microtask:
 - **K-C-02 (renewal reminders): still BLOCKED — reason updated.** Renewal *itself* is
   implemented, but the product has **no reminder/notification channel at all** (no email,
   SMS or cron sender), so LR-01..LR-04 idempotency still has nothing to execute against.
-- **K-C-03 (expiry cannot destroy data): runtime evidence now exists at unit level.**
+- **K-C-03 (expiry cannot destroy data): runtime evidence at unit level AND live.**
   `LicenseEnforcementTest` proves expiry/suspension blocks writes without deleting,
-  hiding or export-blocking school data. The **T-25..T-27 behavioural rows have not been
-  executed on a live school** — gate G8 in `ops/release-gates.md` stays NO-GO until they
-  are recorded.
+  hiding or export-blocking school data. The **T-25..T-27 behavioural rows were executed
+  on the live Hostinger school 2026-10-21** (reads 200 with full rows, write → 402
+  `license_expired`, 22-table checksum snapshot identical before/during expiry, clean
+  restore) — gate G8 in `ops/release-gates.md` is **GO**; record in
+  `quality/docs/tenant-isolation-test-matrix.md` §6. T-26 (export) recorded N/A-now:
+  no export subsystem exists to be export-blocked.
 - **K-C-04 (support access default-deny): partly structural now.** Learner-data endpoints
   exist for school roles (`/api/school/*`), but **no control-plane route serves learner
   data at all** — Super Admin structural default-deny holds by construction (no route to
