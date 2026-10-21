@@ -29,6 +29,18 @@ use CodeIgniter\Shield\Models\UserModel;
 
 class Auth extends ShieldAuth
 {
+    /**
+     * Public self-registration is OFF for this platform.
+     *
+     * Accounts arrive only through provisioning (Super Admin) or the school's
+     * own flows - never from the open internet. Proven live 2026-10-21 during
+     * the G6 role matrix run: a self-registered account (default group `user`)
+     * can sign in but reaches nothing, yet the open form itself is an
+     * unnecessary spam/phishing surface on a pilot deployment. Flip back to
+     * true only if the owner wants open registration.
+     */
+    public bool $allowRegistration = false;
+
     /*
      * ///////////////////////////////////////////////////////////////////
      *

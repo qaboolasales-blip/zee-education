@@ -46,14 +46,17 @@ $routes->group('api/school', ['filter' => ['session', 'role:school_admin', 'lice
     $routes->get('students', 'SchoolApi::students');
     $routes->post('students', 'SchoolApi::createStudent');
     $routes->get('invoices', 'SchoolApi::invoices');
-});
-
-// Attendance and fees are available to school admin AND teacher.
-$routes->group('api/school', ['filter' => ['session', 'role:school_admin,teacher', 'license']], static function ($routes): void {
+    // Staff and fees are School-Admin-only per quality/docs/role-permission-matrix.md
+    // section 3 (rows "School users", "Fees - create/receipt": teacher = N).
     $routes->post('staff', 'SchoolApi::createStaff');
-    $routes->post('attendance', 'SchoolApi::markAttendance');
     $routes->post('fees/invoices', 'SchoolApi::createInvoice');
     $routes->post('fees/receipts', 'SchoolApi::recordReceipt');
+});
+
+// Attendance is available to school admin AND teacher (matrix row: teacher = C,
+// assigned scope - class/subject assignment lands with the academic structure).
+$routes->group('api/school', ['filter' => ['session', 'role:school_admin,teacher', 'license']], static function ($routes): void {
+    $routes->post('attendance', 'SchoolApi::markAttendance');
 });
 
 // Unauthenticated monitoring probe the frontend health check already calls.

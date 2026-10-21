@@ -22,7 +22,19 @@ class RoleFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
+        $isApi = $this->isApiRequest($request);
+
         if (! auth()->loggedIn()) {
+            if ($isApi) {
+                return service('response')
+                    ->setStatusCode(401)
+                    ->setJSON([
+                        'ok'      => false,
+                        'error'   => 'unauthenticated',
+                        'message' => 'Sign in to use this endpoint.',
+                    ]);
+            }
+
             return redirect()->to('login');
         }
 
@@ -35,6 +47,16 @@ class RoleFilter implements FilterInterface
         $required = is_array($arguments) ? $arguments : explode(',', (string) $arguments);
 
         if (! RolePolicy::hasAny($user, $required)) {
+            if ($isApi) {
+                return service('response')
+                    ->setStatusCode(403)
+                    ->setJSON([
+                        'ok'      => false,
+                        'error'   => 'role_required',
+                        'message' => 'Your role cannot access this endpoint.',
+                    ]);
+            }
+
             return redirect()->to('/')->with('error', 'Access denied');
         }
 
@@ -47,10 +69,24 @@ class RoleFilter implements FilterInterface
             }
         }
 
-        if ($needsSchool) {
+        // A Super Admin reaches this point only when the route explicitly lists
+        // `superadmin` in its role set (otherwise hasAny() already refused above).
+        // Platform operators have no school by design, so the school-link rule
+        // must not be applied to them - the route said which roles may proceed.
+        if ($needsSchool && ! RolePolicy::isSuperAdmin($user)) {
             $access = new \App\Libraries\SchoolAccessService();
 
             if ($access->schoolForUser((int) $user->id) === null) {
+                if ($isApi) {
+                    return service('response')
+                        ->setStatusCode(403)
+                        ->setJSON([
+                            'ok'      => false,
+                            'error'   => 'school_not_linked',
+                            'message' => 'No school is linked to this account.',
+                        ]);
+                }
+
                 return redirect()->to('/')->with('error', 'No school is linked to this account');
             }
         }
@@ -58,5 +94,17 @@ class RoleFilter implements FilterInterface
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
+    }
+
+    /**
+     * API paths are answered with JSON 401/403; everything else gets the
+     * browser's redirect. The ROUTE path is used (not the raw request path),
+     * matching SuperAdminFilter, so front-controller prefixes cannot defeat it.
+     */
+    private function isApiRequest(RequestInterface $request): bool
+    {
+        $path = '/' . ltrim((string) $request->getUri()->getRoutePath(), '/');
+
+        return str_starts_with($path, '/api/');
     }
 }
