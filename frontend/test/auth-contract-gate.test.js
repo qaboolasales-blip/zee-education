@@ -14,7 +14,7 @@
 
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
 
@@ -353,7 +353,7 @@ describe('B-O-03 — no invented auth contract', () => {
 
 describe('B-O-02 — no session storage or token handling anywhere in core/', () => {
   const files = listSourceFiles(CORE_DIR);
-  const rel = (file) => file.replace(`${REPO_ROOT}\\`, '').replace(/\//g, '\\');
+  const rel = (file) => relative(REPO_ROOT, file).split(sep).join('/');
 
   /**
    * Files that legitimately contain credential NAMES, because they are the
@@ -362,9 +362,9 @@ describe('B-O-02 — no session storage or token handling anywhere in core/', ()
    * storage or logging patterns below.
    */
   const DENYLIST_DECLARERS = new Set([
-    'frontend\\core\\api\\config.js',
-    'frontend\\core\\auth\\contracts\\pending-auth-contract.js',
-    'frontend\\core\\auth\\session-state.js',
+    'frontend/core/api/config.js',
+    'frontend/core/auth/contracts/pending-auth-contract.js',
+    'frontend/core/auth/session-state.js',
   ]);
 
   /**
@@ -397,14 +397,14 @@ describe('B-O-02 — no session storage or token handling anywhere in core/', ()
     assert.ok(files.length >= 14, `expected the core tree to be scanned, got ${files.length}`);
     const names = files.map(rel);
     for (const required of [
-      'frontend\\core\\api\\client.js',
-      'frontend\\core\\api\\config.js',
-      'frontend\\core\\api\\errors.js',
-      'frontend\\core\\auth\\role-guard.js',
-      'frontend\\core\\auth\\screen-registry.js',
-      'frontend\\core\\auth\\session-state.js',
-      'frontend\\core\\auth\\contracts\\pending-auth-contract.js',
-      'frontend\\core\\format\\money.js',
+      'frontend/core/api/client.js',
+      'frontend/core/api/config.js',
+      'frontend/core/api/errors.js',
+      'frontend/core/auth/role-guard.js',
+      'frontend/core/auth/screen-registry.js',
+      'frontend/core/auth/session-state.js',
+      'frontend/core/auth/contracts/pending-auth-contract.js',
+      'frontend/core/format/money.js',
     ]) {
       assert.ok(names.includes(required), `${required} must be covered by the scan`);
     }
@@ -563,7 +563,7 @@ describe('B-O-03 — the API client carries no credential and no refresh behavio
  */
 describe('B-O-02/B-O-03 — delivered once the contract was published', () => {
   const files = listSourceFiles(CORE_DIR);
-  const rel = (file) => file.replace(`${REPO_ROOT}\\`, '').replace(/\//g, '\\');
+  const rel = (file) => relative(REPO_ROOT, file).split(sep).join('/');
 
   it('publishes a credential scheme that requires no client-side storage', () => {
     assert.equal(

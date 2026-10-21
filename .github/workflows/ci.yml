@@ -141,6 +141,15 @@ jobs:
           sed -i 's/^database\.default\.database = zee_ci_school$/database.default.database = zee_ci/' .env
           grep '^database.default.database' .env
 
+      # Routes.php registers portal routes (login, logout, ...) only when the
+      # platform reports itself installed, and Home.php redirects "/" to the
+      # installer until then. The checkout has no writable/install.lock, so
+      # without this step both AuthTest auth-route tests fail on CI only
+      # (they pass locally where the lock exists from a completed install).
+      - name: Mark the platform as installed (writable/install.lock)
+        working-directory: backend
+        run: touch writable/install.lock
+
       - name: Run backend suite
         working-directory: backend
         run: php vendor/bin/phpunit --no-coverage

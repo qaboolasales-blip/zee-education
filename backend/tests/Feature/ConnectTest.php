@@ -247,9 +247,17 @@ final class ConnectTest extends CIUnitTestCase
 
     public function testQrRendererNeedsNoGdOrImagick(): void
     {
-        // This machine has neither extension. If the renderer still works, a
-        // customer on shared hosting will not need them either.
-        $this->assertFalse(extension_loaded('imagick'));
+        // Shared hosting has neither extension, and the CI runner has both, so
+        // asserting on this machine's php.ini is environment-dependent and
+        // wrong (it fails wherever imagick happens to be loaded). The real
+        // guarantee is that the code path never reaches an image writer:
+        // endroid/qr-code only touches GD/Imagick through those writer classes,
+        // and QrRenderer references none of them.
+        $source = (string) file_get_contents(ROOTPATH . 'app/Libraries/QrRenderer.php');
+
+        $this->assertStringNotContainsString('PngWriter', $source);
+        $this->assertStringNotContainsString('JpgWriter', $source);
+        $this->assertStringNotContainsString('WebpWriter', $source);
 
         $svg = (new QrRenderer())->svg('x', 120);
 
