@@ -51,16 +51,58 @@ $routes->group('api/school', ['filter' => ['session', 'role:school_admin', 'lice
     $routes->post('staff', 'SchoolApi::createStaff');
     $routes->post('fees/invoices', 'SchoolApi::createInvoice');
     $routes->post('fees/receipts', 'SchoolApi::recordReceipt');
+    $routes->get('staff', 'SchoolApi::staff');
+    $routes->get('receipts', 'SchoolApi::receipts');
 });
 
 // Attendance is available to school admin AND teacher (matrix row: teacher = C,
 // assigned scope - class/subject assignment lands with the academic structure).
 $routes->group('api/school', ['filter' => ['session', 'role:school_admin,teacher', 'license']], static function ($routes): void {
     $routes->post('attendance', 'SchoolApi::markAttendance');
+    $routes->post('attendance/batch', 'SchoolApi::markAttendanceBatch');
+    $routes->get('attendance', 'SchoolApi::attendance');
+    $routes->get('overview', 'SchoolApi::overview');
+    $routes->get('marks', 'SchoolApi::marks');
+    $routes->post('marks', 'SchoolApi::saveMarks');
+    $routes->post('assessments', 'SchoolApi::createAssessment');
+    $routes->post('assessments/status', 'SchoolApi::setAssessmentStatus');
+    $routes->get('timetable', 'SchoolApi::timetable');
+    $routes->post('timetable', 'SchoolApi::createTimetableEntry');
+    $routes->post('homework', 'SchoolApi::createHomework');
+    $routes->get('notices', 'SchoolApi::notices');
+    $routes->post('notices', 'SchoolApi::createNotice');
+    $routes->get('settings', 'SchoolApi::settings');
+    $routes->get('options', 'SchoolApi::options');
+});
+
+// School branding and configuration are a School Admin decision (role matrix
+// row "School branding/config": School Admin = Y, Teacher = N). The read stays
+// with the wider school group; the write does not.
+$routes->group('api/school', ['filter' => ['session', 'role:school_admin', 'license']], static function ($routes): void {
+    $routes->post('settings', 'SchoolApi::saveSettings');
+});
+
+// Real exports and real print documents. The `kind` / `template` segment
+// names a document kind, never a tenant: the school is still resolved from
+// the session.
+$routes->group('api/school', ['filter' => ['session', 'role:school_admin,teacher', 'license']], static function ($routes): void {
+    $routes->get('export/(:any)', 'SchoolExport::csv/$1');
+    $routes->get('print/(:any)', 'SchoolExport::print/$1');
 });
 
 // Unauthenticated monitoring probe the frontend health check already calls.
 $routes->get('api/health', 'Health::index');
+
+// CSRF token hand-out for a signed-in client.
+//
+// The global `csrf` filter guards every state-changing verb, and the approved
+// UI shells carry no form and no fetch call, so a signed-in client previously
+// had no way to read the token its own session holds - every write was
+// refused with no path to success. This GET returns that client's own token.
+// It is signed-in only, and it is unreadable cross-origin because Config\Cors
+// never emits an allow-origin header for a foreign origin (ADR-008). A GET is
+// never CSRF-checked, so reading a token cannot rotate it.
+$routes->get('api/csrf', 'CsrfApi::token', ['filter' => 'session']);
 
 // ---------------------------------------------------------------------------
 // Connect-your-school (QR / manual).
@@ -103,6 +145,28 @@ $routes->group('admin/schools', ['filter' => 'superadmin'], static function ($ro
 $routes->group('api/admin', ['filter' => 'superadmin'], static function ($routes): void {
     $routes->get('schools', 'AdminApi::schools');
     $routes->post('schools', 'AdminApi::provision');
+    // Platform records the Super Admin workspace owns. Every one of these
+    // backs a control that used to be a toast.
+    $routes->get('tickets', 'AdminApi::tickets');
+    $routes->post('tickets', 'AdminApi::createTicket');
+    $routes->get('ratebook', 'AdminApi::ratebook');
+    $routes->post('ratebook', 'AdminApi::saveRate');
+    $routes->get('settings', 'AdminApi::settings');
+    $routes->post('settings', 'AdminApi::saveSettings');
+    $routes->get('reminders', 'AdminApi::reminders');
+    $routes->post('reminders', 'AdminApi::createReminder');
+    // The negotiated quote: the annual fee that was agreed with a school plus
+    // the add-ons that were priced separately.
+    $routes->get('quotes', 'AdminApi::quotes');
+    $routes->post('quotes', 'AdminApi::saveQuote');
+    // Installation health and the custom print-design request queue.
+    $routes->get('installations', 'AdminApi::installations');
+    $routes->get('template-requests', 'AdminApi::templateRequests');
+    // Real platform exports and real print specimens. The `kind` / `template`
+    // segment names a document kind, never a tenant: the rows come from the
+    // control plane, which holds no learner data.
+    $routes->get('export/(:any)', 'AdminApi::export/$1');
+    $routes->get('print/(:any)', 'AdminApi::print/$1');
 });
 
 $routes->get('/', 'Home::index');
@@ -117,6 +181,7 @@ $routes->get('portal', 'Portal::index', ['filter' => 'superadmin']);
 $routes->group('api/admin/billing', ['filter' => ['superadmin', 'api_csrf']], static function ($routes): void {
     $routes->get('summary',          'BillingApi::summary');
     $routes->get('upcomings',         'BillingApi::upcomings');
+    $routes->get('plans',            'BillingApi::plans');
     $routes->get('invoices/(:num)',   'BillingApi::invoices/$1');
     $routes->post('issue',            'BillingApi::issue');
     $routes->post('invoice',          'BillingApi::invoice');

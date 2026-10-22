@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\BillingService;
 use App\Libraries\LicenseService;
+use App\Libraries\PlatformService;
 use App\Models\SchoolsModel;
 
 /**
@@ -45,7 +46,7 @@ class Portal extends BaseController
             $html = str_replace($placeholder, (string) $value, $html);
         }
 
-        return $html;
+        return $this->withWriteClient($html);
     }
 
     /**
@@ -55,6 +56,7 @@ class Portal extends BaseController
     {
         $licenses = service('licenses');
         $billing  = service('billing');
+        $platform = new PlatformService();
 
         return [
             'ZEE_SCHOOLS'         => json_encode(
@@ -74,7 +76,7 @@ class Portal extends BaseController
                 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
             ),
             'ZEE_RATEBOOK'        => json_encode(
-                $this->rateBookPayload($licenses, $billing),
+                $platform->rateBook(),
                 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
             ),
             'ZEE_SCHOOL_OPTIONS'  => json_encode(
@@ -82,11 +84,38 @@ class Portal extends BaseController
                 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
             ),
             'ZEE_TICKETS'         => json_encode(
-                $this->ticketsPayload(),
+                $this->ticketsPayload($platform),
                 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
             ),
             'ZEE_TICKET_COUNT'    => json_encode(
-                (string) count($this->ticketsPayload()),
+                (string) count($platform->tickets()),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+            ),
+            'ZEE_PLATFORM_TREND'  => json_encode(
+                $this->platformTrendPayload($billing),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+            ),
+            'ZEE_OPERATIONS'      => json_encode(
+                $platform->operations(),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+            ),
+            'ZEE_REMINDER_LOG'    => json_encode(
+                $platform->reminderLog(),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+            ),
+            'ZEE_TEMPLATE_REQUESTS' => json_encode(
+                $platform->templateRequests(),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+            ),
+            'ZEE_USER'            => json_encode(
+                $this->userPayload(),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+            ),
+            'ZEE_THEME'           => json_encode(
+                [
+                    'primary'   => (string) $platform->setting('theme_primary', '#3558c8'),
+                    'secondary' => (string) $platform->setting('theme_secondary', '#1b2a6b'),
+                ],
                 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
             ),
         ];
@@ -97,6 +126,8 @@ class Portal extends BaseController
      *
      * Columns expected by the approved design:
      *   name, city, domain, plan, database, status, renewal, colour
+     * and, last, the record id - which the licence action needs and the table
+     * never displays.
      *
      * @return list<list<string>>
      */
@@ -143,6 +174,7 @@ class Portal extends BaseController
                     $status,
                     $renewal,
                     '#3b82f6',
+                    (int) ($school->id ?? 0),
                 ];
             }
         } catch (\Throwable $e) {
@@ -207,7 +239,7 @@ class Portal extends BaseController
         $revenueChange = $this->revenueChange($billing);
 
         // Tickets
-        $tickets = $this->ticketsPayload();
+        $tickets = $this->ticketsPayload(new PlatformService());
         $ticketCount = count($tickets);
 
         // Waiting tickets (high/urgent priority)
@@ -219,16 +251,16 @@ class Portal extends BaseController
         }
 
         return [
-            ['\u{25A6}', 'Total school installs', (string) $totalSchools,
-             "{$activeLicences} active \u{00B7} {$provisioning} provisioning",
+            ['▦', 'Total school installs', (string) $totalSchools,
+             "{$activeLicences} active · {$provisioning} provisioning",
              "+{$newThisMonth} this month", '#fff'],
-            ['\u{25F7}', 'Upcoming renewals', (string) $upcomingCount,
+            ['◷', 'Upcoming renewals', (string) $upcomingCount,
              "next: {$nextRenewal}",
              "{$dueSoon} due soon", '#f59e0b'],
-            ['\u{20A8}', 'Licensed revenue', $revenue,
+            ['₨', 'Licensed revenue', $revenue,
              'current billing period',
              $revenueChange, '#10b981'],
-            ['\u{260F}', 'Open support tickets', (string) $ticketCount,
+            ['☏', 'Open support tickets', (string) $ticketCount,
              "across {$totalSchools} school installs",
              "{$waiting} waiting", '#ec4899'],
         ];
@@ -258,7 +290,7 @@ class Portal extends BaseController
 
             $planLabel = $r->plan_name ?? 'No plan';
             $amount    = $this->planFee($r->plan_id ?? null);
-            $planDisplay = $amount !== '' ? "{$planLabel} \u{00B7} PKR {$amount}" : $planLabel;
+            $planDisplay = $amount !== '' ? "{$planLabel} · PKR {$amount}" : $planLabel;
 
             $daysDisplay = $daysLeft >= 0 ? "{$daysLeft}d" : 'overdue';
 
@@ -293,37 +325,86 @@ class Portal extends BaseController
     }
 
     /**
-     * Billing "School rate book" table.
+     * Installations and renewal collection per month, for the last 6 months.
      *
-     * @return list<list<string>>
+     * Both series are read from the control plane: the number of schools that
+     * were provisioned in the month, and the licence revenue that was
+     * collected in the month.
+     *
+     * @return list<array{0:string,1:int,2:float}>
      */
-    private function rateBookPayload(LicenseService $licenses, BillingService $billing): array
+    private function platformTrendPayload(BillingService $billing): array
     {
-        $db      = \Config\Database::connect();
-        $schools = (new SchoolsModel())->findAll();
-        $out     = [];
+        $db = \Config\Database::connect();
+        $out = [];
 
-        foreach ($schools as $school) {
-            $license = $licenses->currentForSchool((int) $school->id);
-            $planName = '-';
-            $fee      = '-';
+        for ($i = 5; $i >= 0; $i--) {
+            $start = date('Y-m-01', strtotime('-' . $i . ' months'));
+            $end   = date('Y-m-t 23:59:59', strtotime($start));
 
-            if ($license !== null) {
-                $plan = $db->table('license_plans')->where('id', $license->plan_id)->get()->getRow();
-                if ($plan !== null) {
-                    $planName = $plan->name;
-                    $fee      = number_format((float) $plan->annual_fee, 0, '.', '');
-                }
+            $installs = 0;
+
+            try {
+                $installs = (int) $db->table('schools')
+                    ->where('provisioned_at >=', $start)
+                    ->where('provisioned_at <=', $end)
+                    ->countAllResults();
+            } catch (\Throwable $e) {
+                log_message('error', 'Portal::platformTrendPayload: ' . $e->getMessage());
             }
 
-            $out[] = [
-                $school->name ?? 'Unnamed school',
-                $planName,
-                $fee,
-            ];
+            $collected = (float) $billing->revenueForPeriod($start, $end);
+
+            $out[] = [date('M', strtotime($start)), $installs, $collected];
         }
 
         return $out;
+    }
+
+    /**
+     * The signed-in platform operator, for the workspace identity.
+     *
+     * @return array{name:string,initials:string}
+     */
+    private function userPayload(): array
+    {
+        $name = 'there';
+
+        try {
+            if (auth()->loggedIn()) {
+                $name = trim((string) (auth()->user()->username ?? ''));
+
+                if ($name === '') {
+                    $name = trim((string) (auth()->user()->email ?? ''));
+                }
+
+                if ($name !== '') {
+                    $name = ucwords(strtolower($name));
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Portal::userPayload: ' . $e->getMessage());
+        }
+
+        if ($name === '') {
+            $name = 'there';
+        }
+
+        $initials = '';
+
+        foreach (preg_split('/\s+/', $name) ?: [] as $part) {
+            if ($part === '') {
+                continue;
+            }
+
+            $initials .= mb_strtoupper(mb_substr($part, 0, 1));
+
+            if (mb_strlen($initials) === 2) {
+                break;
+            }
+        }
+
+        return ['name' => $name, 'initials' => $initials !== '' ? $initials : '—'];
     }
 
     /**
@@ -343,42 +424,70 @@ class Portal extends BaseController
     }
 
     /**
-     * Support ticket list (latest 4).
+     * Support ticket list (latest 6).
      *
      * @return list<list<string>>
      */
-    private function ticketsPayload(): array
+    private function ticketsPayload(PlatformService $platform): array
     {
-        try {
-            $db = \Config\Database::connect();
+        $out = [];
 
-            if (! $db->tableExists('support_tickets')) {
-                return [];
-            }
-
-            $rows = $db->table('support_tickets')
-                ->join('schools', 'schools.id = support_tickets.school_id', 'left')
-                ->orderBy('support_tickets.id', 'DESC')
-                ->limit(4)
-                ->get()
-                ->getResultArray();
-
-            $out = [];
-            foreach ($rows as $r) {
-                $out[] = [
-                    $r->ticket_no ?? ('ZE-' . $r->id),
-                    $r->school_name ?? 'Unknown',
-                    $r->subject ?? '',
-                    $r->priority ?? 'Normal',
-                    $r->created_at ? date('d M Y', strtotime($r->created_at)) : '-',
-                ];
-            }
-
-            return $out;
-        } catch (\Throwable $e) {
-            log_message('error', 'Portal::ticketsPayload: ' . $e->getMessage());
-            return [];
+        foreach (array_slice($platform->tickets(), 0, 6) as $ticket) {
+            $out[] = [
+                (string) ($ticket['ticket_no'] ?? ''),
+                (string) ($ticket['school_name'] ?? 'Platform level'),
+                (string) ($ticket['subject'] ?? ''),
+                (string) ($ticket['priority'] ?? 'Normal'),
+                (string) ($ticket['status'] ?? 'new'),
+                $this->since((string) ($ticket['created_at'] ?? '')),
+            ];
         }
+
+        return $out;
+    }
+
+    /**
+     * A short "3 days ago" style label for a platform timestamp.
+     */
+    private function since(string $timestamp): string
+    {
+        $timestamp = trim($timestamp);
+
+        if ($timestamp === '' || str_starts_with($timestamp, '0000-00-00')) {
+            return '—';
+        }
+
+        $time = strtotime($timestamp);
+
+        if ($time === false) {
+            return '—';
+        }
+
+        $diff = time() - $time;
+
+        if ($diff < 60) {
+            return 'just now';
+        }
+
+        if ($diff < 3600) {
+            $minutes = (int) floor($diff / 60);
+
+            return $minutes . ' min ago';
+        }
+
+        if ($diff < 86400) {
+            $hours = (int) floor($diff / 3600);
+
+            return $hours . ' hour' . ($hours === 1 ? '' : 's') . ' ago';
+        }
+
+        if ($diff < 2592000) {
+            $days = (int) floor($diff / 86400);
+
+            return $days . ' day' . ($days === 1 ? '' : 's') . ' ago';
+        }
+
+        return date('d M Y', $time);
     }
 
     // -----------------------------------------------------------------

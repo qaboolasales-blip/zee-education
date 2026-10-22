@@ -126,6 +126,12 @@ foreach ($it as $file) {
     if (preg_match('#(^|/)tests?/#', $p)) {
         warn('test folder shipped: ' . $p);
     }
+    // Scratch working files (head/body splits, partial rewrites, editor
+    // backups). The builder copies the whole app/ tree, so a stray .tmp would
+    // otherwise reach the buyer as a duplicate of a shipped view file.
+    if (preg_match('#\.(tmp|bak|orig|rej)$#i', $p)) {
+        bad('scratch working file shipped: ' . $p);
+    }
 }
 
 $envFiles === []

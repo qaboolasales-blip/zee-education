@@ -113,6 +113,59 @@ The 2026-10-18 package is superseded; see the sections below for what changed.
   (green with the global CSRF filter enabled); frontend 816/816; live probe
   39/39.
 
+**Route tightening and JSON denials (builds 9-11, 2026-10-21)**
+- Build 9 tagged the pre-release `v0.1.0-pre`.
+- Build 10 fixed a post-login redirect loop: every non-Super-Admin role was
+  bounced between the root route and the sign-in page.
+- Build 11 answered an unauthorised API request with a JSON `403`
+  `{error: role_required}` instead of an HTML redirect, exempted the Super
+  Admin from the school-link check when a route lists `superadmin`, moved the
+  staff and fee routes into the school-admin-only group, and closed public
+  registration.
+
+**Real dashboard data, real exports, real print documents (build 12, 2026-10-22)**
+- The Super Admin portal, the School dashboard and the mobile surface now
+  read and write the platform and school data they display: support tickets,
+  platform settings, the rate book, renewal reminders, per-school quotes,
+  installation health and custom print-design requests are stored, and the
+  school dashboard shows the overview, the daily attendance register, the
+  attendance trend, fee totals and receipts, marks, timetable, homework and
+  notices from the school's own database.
+- Real CSV exports and real print documents: `GET /api/school/export/<kind>`
+  and `GET /api/school/print/<template>` for a school, and
+  `GET /api/admin/export/<kind>` and `GET /api/admin/print/<template>` for
+  the platform (id card, result card, fee receipt, teacher list, admission
+  form). The `kind` / `template` segment names a document kind, never a
+  tenant: the school is still resolved from the signed-in session.
+- `GET /api/csrf` hands a signed-in client the CSRF token its own session
+  holds. The global CSRF filter guards every state-changing verb, and the
+  approved UI shells carry no form, so a signed-in client previously had no
+  way to read that token - every write was refused with no path to success.
+  The route is signed-in only and unreadable cross-origin, and a GET is never
+  CSRF-checked, so reading a token cannot rotate it.
+- Two new control-plane migrations: `support_tickets` and `platform_settings`.
+
+**Fixed: attendance and fee-invoice writes returned 500 (build 12)**
+- `POST /api/school/attendance` and `POST /api/school/fees/invoices` failed
+  with `500` on a real school, because the write omitted columns the schema
+  declares NOT NULL: the academic session, the class, the section and the
+  recording user on an attendance row, and the academic session and due date
+  on an invoice. The session is now resolved from the school's own active
+  session, the class and section from the student's current enrolment, and
+  the recording user from the signed-in session - never from the request.
+- A write that cannot be scoped is now refused with a plain message
+  ("No active academic session is configured for this school", "This student
+  is not enrolled in a class") instead of a database error, and leaves no row
+  behind.
+- A part payment now leaves the invoice `partial`; only a fully settled
+  invoice becomes `paid`. The invoice status stays inside the schema's
+  `due`/`partial`/`paid`/`overdue` values.
+- The old suite never caught this: it asserted that the migration and
+  contract files exist, not that a write succeeds. The new
+  `SchoolRecordWriteTest` drives the real service against the real shipped
+  school schema in a scratch database (9 tests) and drops that database
+  afterwards.
+
 ### Fixed since the 2026-10-18 package
 
 **Packaging defects**
@@ -232,8 +285,8 @@ The 2026-10-18 package is superseded; see the sections below for what changed.
 
 - **This build has not been deployed.** It was built and verified locally
   (package verifier 35/35 clean on the build tree and on the extracted ZIP;
-  164 backend tests, 671 assertions, 0 skipped). Run the smoke checklist
-  before using it with real users.
+  220 backend tests, 958 assertions, 0 skipped; 816/816 frontend). Run the
+  smoke checklist before using it with real users.
 - No role smoke tests were executed on the pilot deployment, because no
   owner-approved pilot accounts existed yet.
 - CSRF verification is active on **every state-changing request** (global

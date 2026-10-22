@@ -46,4 +46,37 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
     }
+
+    /**
+     * Appends the shared write client to an approved UI shell.
+     *
+     * The shells are presentation surfaces: they carry no <form> and no fetch,
+     * so their action buttons previously ended in a preview notice and could
+     * never reach an endpoint. The client in app/Views/portal/zee-api.js holds
+     * everything the shells must not carry themselves - it reads a fresh CSRF
+     * token from GET /api/csrf before every write (verification consumes the
+     * token, so one token cannot be reused) and posts JSON with the
+     * X-CSRF-TOKEN header the session expects.
+     *
+     * It is injected here rather than edited into the template so the approved
+     * markup stays exactly as it was approved.
+     *
+     * @return string
+     */
+    protected function withWriteClient(string $html): string
+    {
+        $path = APPPATH . 'Views/portal/zee-api.js';
+
+        if (! is_file($path)) {
+            throw new \RuntimeException('Write client missing: app/Views/portal/zee-api.js');
+        }
+
+        $script = '<script>' . (string) file_get_contents($path) . '</script>';
+
+        if (stripos($html, '</body>') !== false) {
+            return str_ireplace('</body>', $script . '</body>', $html);
+        }
+
+        return $html . $script;
+    }
 }

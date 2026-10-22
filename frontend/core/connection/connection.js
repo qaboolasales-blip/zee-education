@@ -12,8 +12,11 @@
  *   - both required; otherwise `notice('Please enter school domain and code')`
  *   - derives the school display name from the first label of the domain, title-cased:
  *     `horizon.school.pk` → `Horizon`
- *   - reports `notice('Connected to ' + n + ' in this demo')` — the word **demo** is
- *     part of the reference copy, so this is a demo transition, not a real session
+ *   - reports `notice('Connected to ' + n)` — the word **demo** is part of the reference
+ *     copy (the reference files are permanently locked), so this remains a demo transition
+ *     of the locked onboarding UI, not a real session establishment. The *session* part
+ *     of the flow now has a real endpoint behind it: `POST /api/connect/resolve` returns a
+ *     `{ found, signin }` payload, and `connectSchool()` redirects to `result.signin`.
  *   - QR scan reports `notice('Camera scan ke liye real app/PWA permission chahiye')`
  *
  * Connection precedes login in the reference ("…phir user apne account se login karega"),
@@ -24,6 +27,9 @@
  * fails the suite if any core module does. A selection that *is* kept is an in-memory
  * value cleared by `clearSelectedSchool()` — on logout or school switch — which is
  * exactly the clearing the task names.
+ *
+ * The session step (`POST /api/connect/resolve`) is the part whose contract went live
+ * in this pass; the onboarding notice itself stays demo per the locked reference.
  *
  * No DOM, no request, no storage write.
  */

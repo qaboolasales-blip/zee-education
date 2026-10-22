@@ -83,6 +83,35 @@ class BillingApi extends BaseController
         }
     }
 
+    /**
+     * GET /api/admin/billing/plans
+     *
+     * The commercial catalogue, read-only. The approved Super Admin UI cannot
+     * invent a plan id: it offers exactly this list when an operator issues a
+     * licence, so a licence is always issued against a plan the platform
+     * actually sells.
+     */
+    public function plans()
+    {
+        try {
+            $plans = \Config\Database::connect()
+                ->table('license_plans')
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            return $this->json([
+                'ok'    => true,
+                'plans' => $plans,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'BillingApi::plans: ' . $e->getMessage());
+
+            return $this->json(['ok' => false, 'message' => 'Could not read licence plans'], 500);
+        }
+    }
+
     /** GET /api/admin/billing/invoices/{schoolId} */
     public function invoices($schoolId = null)
     {

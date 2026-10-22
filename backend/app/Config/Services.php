@@ -7,6 +7,7 @@ use App\Libraries\CredentialVault;
 use App\Libraries\HostResolver;
 use App\Libraries\InviteService;
 use App\Libraries\LicenseService;
+use App\Libraries\PlatformService;
 use App\Libraries\QrRenderer;
 use App\Libraries\SchoolAccessService;
 use App\Libraries\SchoolRecordService;
@@ -112,5 +113,26 @@ class Services extends BaseService
         return $getShared
             ? static::getSharedInstance('schoolRecords')
             : new SchoolRecordService();
+    }
+
+    /**
+     * Platform (control-plane) records the Super Admin workspace owns:
+     * support tickets, platform settings and the negotiated rate book.
+     */
+    public static function platform(bool $getShared = true)
+    {
+        return $getShared
+            ? static::getSharedInstance('platform')
+            : new PlatformService();
+    }
+
+    /**
+     * Real school data for the school workspace.
+     */
+    public static function schoolInsight(bool $getShared = true)
+    {
+        return $getShared
+            ? static::getSharedInstance('schoolInsight')
+            : new \App\Libraries\SchoolInsightService();
     }
 }

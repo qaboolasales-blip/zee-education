@@ -114,7 +114,7 @@ final class PortalTest extends CIUnitTestCase
                 'ticket_no'   => 'ZE-9999',
                 'subject'     => 'Test ticket',
                 'priority'    => 'Normal',
-                'status'      => 'open',
+                'status'      => 'new',
                 'created_at'  => $now,
                 'updated_at'  => $now,
             ]);

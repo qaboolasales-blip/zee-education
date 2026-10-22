@@ -107,6 +107,17 @@ php_errors.log
 vendor/
 
 #-------------------------
+# Scratch working files
+#-------------------------
+# Intermediate artefacts of ad-hoc editing tools (head/body splits, partial
+# rewrites). They are duplicates of the real view files, are referenced by
+# nothing, and the package builder copies the whole app/ tree - so a stray
+# .tmp would ship to buyers. Never commit one.
+*.tmp
+*.bak
+*.orig
+
+#-------------------------
 # IDE / Development Files
 #-------------------------
 
