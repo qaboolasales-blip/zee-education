@@ -1,9 +1,9 @@
 # Zee Education v0.1.0 — Release Notes
 
-**Build date:** 2026-10-21 (build 10; rebuilds build 9 of 2026-10-21, builds 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
+**Build date:** 2026-10-22 (build 12; rebuilds build 10 of 2026-10-21, build 9 of 2026-10-21, builds 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
 **Package:** `Zee_Education_v0.1.0_Hostinger_Installer.zip`
-**Commit:** `77739b6b221b321502c9511adb36ecff8cde8366` (2 commits past tag `v0.1.0-pre`, which still points at build 9's `b1267df…`; manifest records `git_tag: null`)
-**SHA-256:** `c31ad281a916ae5728f4d36716c1aea2b5abc41b8075dd48696420f7d86dc5a8`
+**Commit:** `6b5d8f60a3780742067a682e56814cbd06606665` (3 commits past tag `v0.1.0-pre`, which still points at build 9's `b1267df…`; manifest records `git_tag: null`)
+**SHA-256:** `863517700968f9832c78808f3858eab2d40a0cdf2fbb8a74d0047796982d96b7`
 (verify with `sha256sum` against `SHA256SUMS.txt`, then run `php tools/verify-package.php`)
 **Release type:** PRE-RELEASE — tagged **`v0.1.0-pre`** (pre-release tag, not a stable release)
 **Installation mode:** Platform Owner / Super Admin control plane
@@ -146,13 +146,48 @@ features were added. Full reasoning: `PACKAGING_DECISIONS.md` §9.
   cookie-readable; recorded hardening limitation).
 
 **Verified for this build:** `verify-package.php` 35/35 clean on the build tree
-*and* byte-identical extraction (1,308 files); reference UI hashes 3/3 unchanged; no real
+*and* byte-identical extraction (1,317 files); reference UI hashes 3/3 unchanged; no real
 `.env`, no private keys, no hosting account id, no pilot test data anywhere in the package;
-backend tests **164 tests / 673 assertions / 0 skipped / 0 failures** (green with the global
-CSRF filter enabled; CI empty-DB recipe re-validated at the same counts; 671 assertions
-before the 2026-10-21 tag-round `ConnectTest` rewrite); a 39-check live
-runtime security matrix passed (incl. session-fixation checks SF-01/SF-02 and the global-CSRF
-polarity checks `I1`/`I2`/`I3`; repo-only evidence: `quality/docs/security-runtime-review.md`).
+no scratch working file in the package (the verifier now fails on any `.tmp`/`.bak`/`.orig`);
+backend tests **220 tests / 958 assertions / 0 skipped / 0 failures** (green with the global
+CSRF filter enabled; 179 tests / 715 assertions before build 12); frontend **816/816**; a
+39-check live runtime security matrix passed (incl. session-fixation checks SF-01/SF-02 and
+the global-CSRF polarity checks `I1`/`I2`/`I3`; repo-only evidence: `quality/docs/security-runtime-review.md`).
+
+**Fixed in build 12 (both were 500s on a live school):**
+
+- `POST /api/school/attendance` — the write omitted the NOT NULL
+  `academic_session_id`, `class_id`, `section_id` and `recorded_by` columns. The
+  session now comes from the school's own active session, the class and section
+  from the student's current enrolment, and the recording user from the signed-in
+  session — never from the request.
+- `POST /api/school/fees/invoices` — the write omitted the NOT NULL
+  `academic_session_id` and `due_date` and used a status outside the
+  `due`/`partial`/`paid`/`overdue` ENUM. The session is now resolved, the due
+  date defaults to 30 days out, and a part payment leaves the invoice `partial`.
+
+The old suite could not catch either defect: it asserted that the migration and
+contract **files** exist, not that a write **succeeds**. The new
+`SchoolRecordWriteTest` drives the real service against the real shipped school
+schema in a scratch database and drops that database afterwards.
+
+**New in build 12:**
+
+- **Real platform and school data.** The Super Admin portal stores support
+  tickets, platform settings, the rate book, renewal reminders, per-school
+  quotes, installation health and custom print-design requests; the school
+  dashboard reads the school's own overview, daily attendance register and
+  trend, fee totals and receipts, marks, timetable, homework and notices.
+- **Real exports and print documents.** `/api/school/export/<kind>` and
+  `/api/school/print/<template>` for a school, `/api/admin/export/<kind>` and
+  `/api/admin/print/<template>` for the platform (id card, result card, fee
+  receipt, teacher list, admission form).
+- **`GET /api/csrf`** hands a signed-in client the CSRF token its own session
+  holds. The global CSRF filter guards every state-changing verb and the
+  approved UI shells carry no form, so a signed-in client previously had no way
+  to read that token — every write was refused with no path to success. The
+  route is signed-in only, unreadable cross-origin, and a GET is never
+  CSRF-checked, so reading a token cannot rotate it.
 
 ---
 
@@ -215,7 +250,14 @@ Business API · native app-store packaging
    sign-in page for `/m`. Build-5 additions: confirm a token-less browser sign-in
    attempt is refused with `403` while a normal sign-in still works; confirm
    `/api/connect/resolve` and `/api/connect/verify` return JSON (they were `500`
-   before this build).
+   before this build). Build-12 additions: with a school that has an active
+   academic session, an enrolled student and a class/section, confirm
+   `POST /api/school/attendance` and `POST /api/school/fees/invoices` both
+   answer `200 {ok:true}` (they were `500` before this build), confirm a write
+   without an active session is refused with a plain message and leaves no row
+   behind, confirm `GET /api/csrf` returns a token for a signed-in client, and
+   confirm `/api/school/export/students` and `/api/school/print/id-card`
+   return a real document.
 4. Re-run backup/restore on both databases and verify them clean of pilot data.
 5. (done 2026-10-21) The working tree is committed and tagged `v0.1.0-pre`;
    build 9 was rebuilt from the tag so `package-manifest.json` records it.

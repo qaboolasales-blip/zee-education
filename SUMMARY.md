@@ -118,7 +118,7 @@ scratch MySQL database and drops it afterwards.
 - Real exports + print documents for both planes (`/api/school/export|print/*`, `/api/admin/export|print/*`)
 - `GET /api/csrf` — signed-in clients can now read their own CSRF token (every write was previously unanswerable)
 - LB-2 + LB-4 fixed (attendance / fee-invoice writes returned 500) and regression-pinned
-- Package SHA256: see `release/SHA256SUMS.txt` (rebuilt from this tree; 1317 files)
+- Package SHA256: `863517700968f9832c78808f3858eab2d40a0cdf2fbb8a74d0047796982d96b7` (1317 files, built from commit `6b5d8f6`)
 - Verification: build-package.ps1 **35/0**, `SHA256SUMS.txt` matches, 0 scratch files in the package
 - Tests: backend `220/958`, frontend `816/816` (green with global CSRF filter)
 
