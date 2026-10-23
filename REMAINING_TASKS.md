@@ -74,6 +74,27 @@ control plane `zee_stage_control` + school DB `zi_stage_demo`, served by
 
 This closes the AI/ops smoke items.
 
+### Build 14 clean-install verification — 2026-10-23 (LB-6 fix proven)
+
+A second, independent install was made from the final build-14 ZIP (new folder
+`C:\laragon\www\zee_stage14`, new DBs `zee_stage14_control` + `zi_stage14_demo`)
+to prove the packaged installer, not a hand-patched tree.
+
+| Check | Result |
+|-------|--------|
+| Extracted build-14 ZIP, `.env` from `.env.example` | 1317 files, verifier 35/35 |
+| Installer migrations (18, three namespaces) | 23 control tables; install locked |
+| **Plan catalogue seeded by the installer** | **3 plans immediately after the migration step** (Starter 30000, Growth 42000, Complete 65000) — no CLI seeder |
+| First Super Admin | created, `/portal` reached |
+| School provisioning — `demo` | 201, `completed`, database `zi_stage14_demo` |
+| Licence issue (plan 1) | 201, `license_id=1`, key `ZEE-9FT8-WEV1-MPM5-TVWX` |
+| School-admin login | `/school` |
+| Attendance write | 200 `{"ok":true,"message":"Attendance recorded"}`; row has `academic_session_id=1`, `class_id=1`, `section_id=1`, `recorded_by=2` |
+| Licence row | `active`, 2026-10-23 → 2027-10-23 |
+
+The same build-13 clean install exposed **LB-6** (no plans → licence issue 422);
+build 14 fixes it and this run proves the fix from the shipped ZIP.
+
 ### Backup / restore drill — G9 evidence (2026-10-23, local)
 
 | Step | Result |
@@ -114,8 +135,9 @@ host DB grant, which needs the owner/host action listed in the gate table.
 | LB-2 | `POST /api/school/attendance` → 500 (NOT NULL academic-structure columns omitted) | Fixed — session/class/section/actor resolved from the school's own data | `SchoolRecordWriteTest` (5 attendance tests) against the real shipped school schema |
 | LB-4 | `POST /api/school/fees/invoices` → 500 (NOT NULL session + due date; status outside the ENUM) | Fixed — session resolved, due date defaults +30 days, status `due`/`partial`/`paid` | `SchoolRecordWriteTest` (4 fee tests) against the real shipped school schema |
 | **LB-5** | Multi-school install resolved every school to the default (school A) database when `ZEE_SCHOOL_DB_MAP` was empty | Fixed — same map/prefix rule as provisioning; **fails closed** for multi-school installs, empty read for unresolved school | `TenantIsolationTest` +6 tests (20/20); live A/B retest on build 12 with patched files |
+| **LB-6** | Fresh install had an empty `license_plans` table: licence issue failed `422` and every school stayed unlicensed (`402` on writes) | Fixed in build 14 — installer's migration step runs the idempotent `LicensePlansSeeder` and logs `plan catalogue: OK` | `InstallerPlanCatalogueTest` (2 tests, 228/976 suite); build-14 clean install showed 3 plans before any manual seed |
 | Scratch files in the package | 4 leftover `.tmp` view fragments would have shipped to buyers (the builder copies the whole `app/` tree) | Deleted; `*.tmp`/`*.bak`/`*.orig` git-ignored; the package verifier now fails on any scratch file | Package rebuild: 0 scratch files, verifier 35/35 |
-| Backend suite | Could not run locally — MySQL service was down (148 connection errors) | MySQL started; suite green | `OK (226 tests, 968 assertions)`; frontend `816/816` |
+| Backend suite | Could not run locally — MySQL service was down (148 connection errors) | MySQL started; suite green | `OK (228 tests, 976 assertions)`; frontend `816/816` |
 
 ## Pending Batch Microtasks
 
@@ -125,7 +147,7 @@ host DB grant, which needs the owner/host action listed in the gate table.
 ## Defects Still Open
 
 - None in the write-path family. The previously open LB-2 and LB-4 are fixed
-  and regression-pinned, and **LB-5** (cross-tenant DB fallback, found during the
-  2026-10-23 live smoke) is fixed in build 13 with six regression tests (see
-  "Closed Since 2026-10-21").
+  and regression-pinned, **LB-5** (cross-tenant DB fallback) is fixed in build 13
+  and **LB-6** (empty plan catalogue on a fresh install) is fixed in build 14,
+  each with regression tests (see "Closed Since 2026-10-21").
 - G3b (pixel regression) is unproven, not defective: it has never been executed.

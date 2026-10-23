@@ -1,9 +1,9 @@
 # Zee Education v0.1.0 — Release Notes
 
-**Build date:** 2026-10-23 (build 13; rebuilds build 12 of 2026-10-22, build 10 of 2026-10-21, build 9 of 2026-10-21, builds 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
+**Build date:** 2026-10-23 (build 14; rebuilds build 13 of 2026-10-23, build 12 of 2026-10-22, build 10 of 2026-10-21, build 9 of 2026-10-21, builds 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
 **Package:** `Zee_Education_v0.1.0_Hostinger_Installer.zip`
-**Commit:** `19df717e5722a1bbe1d351d400b9881c62c581d1` (packaged commit, 14 commits past tag `v0.1.0-pre` at `8ef4d7c`; manifest records `git_tag: null`)
-**SHA-256:** `5d098348163a2ca2390261f40489ef8affa69724a535c6bf23a88c158290ba3c`
+**Commit:** `d974ea778ff53fb8873f68de47d1f9d14c2ea662` (packaged commit, 16 commits past tag `v0.1.0-pre` at `8ef4d7c`; manifest records `git_tag: null`)
+**SHA-256:** `946c47b46c5ce27f6da27ed0889addc68189bca253c5eb24dcce480f17f3513d`
 (verify with `sha256sum` against `SHA256SUMS.txt`, then run `php tools/verify-package.php`)
 **Release type:** PRE-RELEASE — tagged **`v0.1.0-pre`** (pre-release tag, not a stable release)
 **Installation mode:** Platform Owner / Super Admin control plane
@@ -149,7 +149,7 @@ features were added. Full reasoning: `PACKAGING_DECISIONS.md` §9.
 *and* byte-identical extraction (1,317 files); reference UI hashes 3/3 unchanged; no real
 `.env`, no private keys, no hosting account id, no pilot test data anywhere in the package;
 no scratch working file in the package (the verifier now fails on any `.tmp`/`.bak`/`.orig`);
-backend tests **226 tests / 968 assertions / 0 skipped / 0 failures** (green with the global
+backend tests **228 tests / 976 assertions / 0 skipped / 0 failures** (green with the global
 CSRF filter enabled; 179 tests / 715 assertions before build 12); frontend **816/816**; a
 39-check live runtime security matrix passed (incl. session-fixation checks SF-01/SF-02 and
 the global-CSRF polarity checks `I1`/`I2`/`I3`; repo-only evidence: `quality/docs/security-runtime-review.md`).
@@ -212,6 +212,29 @@ schema in a scratch database and drops that database afterwards.
   B's database, and school A's counts were unchanged.
 - No data migration is needed; the change only affects how the connection is
   selected.
+
+---
+
+**Fixed in build 14 (found during a clean install of build 13):**
+
+- **A fresh install had no licence plans.** The installer ran every migration
+  but never seeded the commercial plan catalogue, so the Super Admin had no
+  plan to issue a licence from: the API answered `422`, and every provisioned
+  school stayed unlicensed (writes `402`) until someone ran
+  `php spark db:seed LicensePlansSeeder` — not possible on typical shared
+  hosting.
+- The installer's migration step now runs the idempotent
+  `LicensePlansSeeder` (Starter PKR 30,000 / Growth PKR 42,000 / Complete
+  PKR 65,000) and records `plan catalogue: OK` in the install log. Re-running
+  the installer updates the same rows instead of duplicating them.
+- Pinned by `InstallerPlanCatalogueTest` (2 tests): a wiped catalogue is
+  restored by `migrate()`, and two consecutive runs still leave exactly three
+  plans.
+- Proven from this ZIP: a clean install showed the three plans immediately
+  after the migration step, then provisioning `201`, licence `201`, and an
+  attendance write `200` with `recorded_by=2` — no CLI step.
+- No data migration is needed; existing installations keep their plans, and a
+  re-run only fills/updates the catalogue.
 
 ---
 
