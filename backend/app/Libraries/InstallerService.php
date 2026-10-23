@@ -11,7 +11,8 @@ use Config\Migrations;
  * Responsibilities (all server-side, all idempotent):
  *  1. preflight  - environment readiness checks
  *  2. testDb     - verify the CONTROL-PLANE connection from the server-local .env
- *  3. migrate    - official migration order: Shield -> Settings -> App
+ *  3. migrate    - official migration order: Shield -> Settings -> App,
+ *                  then the idempotent plan-catalogue seed
  *  4. createAdmin- create the very first Platform Owner / Super Admin
  *  5. lock       - write the install lock so the public installer disappears
  *
@@ -157,6 +158,21 @@ class InstallerService
                 $success    = false;
                 $log[]      = $namespace . ': FAILED';
                 break;
+            }
+        }
+
+        // Plans are a catalogue, not schema: without them the Super Admin has
+        // nothing to issue a licence from, so a fresh install could provision a
+        // school and then refuse every write with "plan_id is required". The
+        // seeder is idempotent, so re-running the installer is safe.
+        if ($success) {
+            try {
+                \Config\Database::seeder()->call('App\Database\Seeds\LicensePlansSeeder');
+                $log[] = 'plan catalogue: OK';
+            } catch (\Throwable $e) {
+                $success = false;
+                $log[]   = 'plan catalogue: FAILED';
+                log_message('error', 'Plan catalogue seeding failed: {message}', ['message' => $e->getMessage()]);
             }
         }
 

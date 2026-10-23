@@ -187,6 +187,20 @@ The 2026-10-18 package is superseded; see the sections below for what changed.
   B's user id in B's database, and school A's counts were unchanged.
 - Backend suite is now 226 tests / 968 assertions; frontend 816/816.
 
+**Fixed: a fresh install had no licence plans (build 14, 2026-10-23)**
+- The first-run installer ran all migrations but never seeded the commercial
+  plan catalogue. A newly installed product could provision a school, but the
+  Super Admin had no plan to issue a licence from - every school write was then
+  refused with `402` until someone ran `php spark db:seed LicensePlansSeeder`,
+  which is not possible on typical shared hosting.
+- The installer's migration step now seeds the idempotent
+  `LicensePlansSeeder` (Starter PKR 30,000 / Growth PKR 42,000 / Complete
+  PKR 65,000) and records `plan catalogue: OK` in the install log. Re-running
+  the installer updates the same rows instead of duplicating them.
+- Pinned by `InstallerPlanCatalogueTest` (2 tests): a wiped catalogue is
+  restored by `migrate()`, and two consecutive runs still leave exactly three
+  plans. Backend suite is now 228 tests / 976 assertions.
+
 ### Fixed since the 2026-10-18 package
 
 **Packaging defects**
