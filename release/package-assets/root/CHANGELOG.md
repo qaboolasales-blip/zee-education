@@ -166,6 +166,27 @@ The 2026-10-18 package is superseded; see the sections below for what changed.
   school schema in a scratch database (9 tests) and drops that database
   afterwards.
 
+**Fixed: a second school could read the first school's database (build 13, 2026-10-23)**
+- On an installation with more than one school, a school's database was
+  resolved to `schooldb.default.database` whenever `ZEE_SCHOOL_DB_MAP` was
+  empty, even though provisioning had created `<prefix><school_code>`
+  databases. The second school therefore opened the first school's database:
+  its students, fees and attendance were readable, and a write was recorded
+  against the wrong tenant.
+- Resolution now uses the same rule as provisioning - explicit map first, then
+  `<prefix><school_code>` - and **fails closed**: with more than one school, an
+  unresolved database name is refused and logged instead of falling back to a
+  default. A read for an unresolved school returns an empty workspace, never
+  another tenant's rows. Single-school installs keep the documented default
+  fallback.
+- Pinned by six new tests in `TenantIsolationTest` (20 in that file): map wins,
+  prefix fallback, default only for a single-school install, unsafe input
+  refused, fail-closed with two schools, and the prefix derived from the code.
+- Verified live against two provisioned schools: each admin saw only its own
+  student and only its own attendance row; the row written by school B carried
+  B's user id in B's database, and school A's counts were unchanged.
+- Backend suite is now 226 tests / 968 assertions; frontend 816/816.
+
 ### Fixed since the 2026-10-18 package
 
 **Packaging defects**
