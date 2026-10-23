@@ -126,7 +126,7 @@ host DB grant, which needs the owner/host action listed in the gate table.
 | Fix | New `databaseNameForSchool()` + static `resolveDatabaseName()`: explicit map → `<prefix><code>` → default **only for a single-school install**; otherwise `null` (fail closed) with an error log. `connectionForSchoolId()` returns `null` instead of guessing |
 | Read contract | `SchoolApi::students()` / `invoices()` now use `insight()`: an unresolved/no-DB school answers `200` with empty lists, never `403` and never another tenant's rows |
 | Regression pin | `TenantIsolationTest` +6 tests (map wins, prefix fallback, default only for one school, unsafe input rejected, fail-closed with two schools, prefix from code) — file 20/20 |
-| Verification | Backend **226 tests / 968 assertions** green; live two-school retest rows above |
+| Verification | Backend **228 tests / 976 assertions** green (226/968 at the time of the fix); live two-school retest rows above |
 
 ## Closed Since 2026-10-21
 

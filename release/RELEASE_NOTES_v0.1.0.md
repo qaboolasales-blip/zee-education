@@ -13,9 +13,10 @@
 ## Read this first
 
 This is a **pre-release**, tagged `v0.1.0-pre` (a pre-release tag, not a stable
-release). The source tree is committed and pushed to GitHub; the tag points at the
+release). The source tree is committed to Git; publishing it to GitHub is an owner
+action. The tag marks the earlier pre-release, and `package-manifest.json` records the
 exact commit this package was built from. Treat it as an early build for a controlled
-pilot. `PACKAGE_BUILD_REPORT.md` records exactly what was and was not verified.
+pilot. The historical build report lives at `archive/release/PACKAGE_BUILD_REPORT.md`; this document and `CHANGELOG.md` describe the current build.
 
 No claim is made about CodeCanyon approval or any marketplace review. This is a
 CodeCanyon-*style* commercial package only.
