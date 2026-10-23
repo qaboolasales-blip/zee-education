@@ -38,25 +38,25 @@ class SchoolApi extends BaseController
     /** GET /api/school/students */
     public function students()
     {
-        $svc = $this->service();
+        $insight = $this->insight();
 
-        if ($svc === null) {
+        if ($insight === null) {
             return $this->json(['ok' => false, 'message' => $this->writeRefusal()], 403);
         }
 
-        return $this->json(['ok' => true, 'students' => $svc->listStudents()]);
+        return $this->json(['ok' => true, 'students' => $insight->students()]);
     }
 
     /** GET /api/school/invoices */
     public function invoices()
     {
-        $svc = $this->service();
+        $insight = $this->insight();
 
-        if ($svc === null) {
+        if ($insight === null) {
             return $this->json(['ok' => false, 'message' => $this->writeRefusal()], 403);
         }
 
-        return $this->json(['ok' => true, 'invoices' => $svc->listInvoices()]);
+        return $this->json(['ok' => true, 'invoices' => $insight->invoices()]);
     }
 
     /** GET /api/school/staff */

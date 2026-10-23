@@ -59,6 +59,12 @@ class SchoolAccessService
     /**
      * Dedicated connection to the given school's own database.
      *
+     * The name is resolved with the SAME rules provisioning used (server-side
+     * map, then the configured prefix). When no name can be resolved the
+     * single configured `schooldb.default.database` is used only on a
+     * single-school install; with two or more schools this fails closed rather
+     * than serving the default school's data to another tenant.
+     *
      * Returns null when school-local database access is not configured.
      */
     public function connectionForSchoolId(int $schoolId)
@@ -71,11 +77,13 @@ class SchoolAccessService
 
         $default = config('Database')->default;
 
-        $dbName = (string) env('schooldb.default.database', '');
+        $dbName = $this->databaseNameForSchool($schoolId);
 
-        // When a mapping is present use it, so several schools can each have
-        // their own database instead of sharing one configured name.
-        $dbName = $this->databaseForSchoolCode($schoolId) ?? $dbName;
+        if ($dbName === null) {
+            log_message('error', 'SchoolAccessService::connectionForSchoolId: no database could be resolved for school ' . $schoolId);
+
+            return null;
+        }
 
         try {
             $conn = \CodeIgniter\Database\Config::connect([
@@ -110,9 +118,9 @@ class SchoolAccessService
     }
 
     /**
-     * Look up a school's dedicated database name from the server-side map.
+     * Resolve the database name for a school, matching the provisioning rules.
      */
-    private function databaseForSchoolCode(int $schoolId): ?string
+    public function databaseNameForSchool(int $schoolId): ?string
     {
         try {
             $db     = \Config\Database::connect();
@@ -122,23 +130,54 @@ class SchoolAccessService
                 return null;
             }
 
-            $map = (string) (env('ZEE_SCHOOL_DB_MAP') ?? env('ZEE_SCHOOL_DB_MAP', ''));
+            return self::resolveDatabaseName(
+                (string) $school->school_code,
+                (string) env('ZEE_SCHOOL_DB_MAP', ''),
+                (string) env('ZEE_SCHOOL_DB_PREFIX', ''),
+                (string) env('schooldb.default.database', ''),
+                (int) $db->table('schools')->countAllResults()
+            );
+        } catch (\Throwable $e) {
+            log_message('error', 'SchoolAccessService::databaseNameForSchool: ' . $e->getMessage());
 
-            if ($map === '') {
-                return null;
-            }
+            return null;
+        }
+    }
 
-            foreach (explode(',', $map) as $pair) {
-                $parts = explode('=', trim($pair), 2);
+    /**
+     * Pure resolution rule, shared by the access path and its tests.
+     *
+     * Order: server-side map, then the configured prefix, then the default
+     * database for a single-school install. Anything else returns null so a
+     * missing mapping can never silently point one tenant at another's data.
+     */
+    public static function resolveDatabaseName(
+        string $schoolCode,
+        string $map,
+        string $prefix,
+        string $defaultDatabase,
+        int $schoolCount
+    ): ?string {
+        $key = strtolower(trim($schoolCode));
 
-                if (count($parts) === 2 && strtolower(trim($parts[0])) === strtolower((string) $school->school_code)) {
-                    return trim($parts[1]);
-                }
-            }
-        } catch (\Throwable) {
+        if (preg_match('/^[a-z0-9]{3,20}$/', $key) !== 1) {
             return null;
         }
 
-        return null;
+        foreach (explode(',', $map) as $pair) {
+            $parts = explode('=', trim($pair), 2);
+
+            if (count($parts) === 2 && strtolower(trim($parts[0])) === $key) {
+                $mapped = trim($parts[1]);
+
+                return preg_match('/^[a-z0-9_]+$/', $mapped) === 1 ? $mapped : null;
+            }
+        }
+
+        if ($prefix !== '') {
+            return preg_match('/^[a-z0-9_]+$/', $prefix) === 1 ? $prefix . $key : null;
+        }
+
+        return $schoolCount === 1 && $defaultDatabase !== '' ? $defaultDatabase : null;
     }
 }

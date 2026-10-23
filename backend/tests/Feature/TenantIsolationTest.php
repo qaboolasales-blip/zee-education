@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Libraries\CredentialVault;
 use App\Libraries\HostResolver;
+use App\Libraries\SchoolAccessService;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
@@ -57,10 +58,10 @@ final class TenantIsolationTest extends CIUnitTestCase
             $q->select('id')->from('schools')->where('school_code', 'ISOTEST');
         }, false)->delete();
 
-        $db->table('schools')->where('school_code', 'ISOTEST')->delete();
+        $db->table('schools')->whereIn('school_code', ['ISOTEST', 'ISOTEST2'])->delete();
     }
 
-    private function makeSchool(string $name = 'Isolation Test School'): int
+    private function makeSchool(string $name = 'Isolation Test School', string $code = 'ISOTEST'): int
     {
         $db  = \Config\Database::connect();
         $now = date('Y-m-d H:i:s');
@@ -69,7 +70,7 @@ final class TenantIsolationTest extends CIUnitTestCase
             'name'         => $name,
             'status'       => 'active',
             'plan_code'    => 'starter',
-            'school_code'  => 'ISOTEST',
+            'school_code'  => $code,
             'timezone'     => 'Asia/Karachi',
             'currency'     => 'PKR',
             'locale'       => 'en',
@@ -312,6 +313,113 @@ final class TenantIsolationTest extends CIUnitTestCase
                 $this->hosts->normaliseDomain($bad),
                 'Input must be rejected before it reaches any lookup: ' . var_export($bad, true)
             );
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // school database resolution (tenant DB never falls back silently)
+    // -----------------------------------------------------------------
+
+    public function testDatabaseResolutionPrefersTheServerSideMap(): void
+    {
+        $this->assertSame(
+            'host_provisioned_db',
+            SchoolAccessService::resolveDatabaseName('demo', 'demo=host_provisioned_db', 'ignored_', 'default_db', 5)
+        );
+    }
+
+    public function testDatabaseResolutionFallsBackToTheProvisioningPrefix(): void
+    {
+        // The access path must derive the SAME name provisioning created.
+        $this->assertSame(
+            'zi_school_demo',
+            SchoolAccessService::resolveDatabaseName('demo', '', 'zi_school_', 'default_db', 5)
+        );
+    }
+
+    public function testDatabaseResolutionAllowsDefaultOnlyForOneSchool(): void
+    {
+        $this->assertSame('default_db', SchoolAccessService::resolveDatabaseName('demo', '', '', 'default_db', 1));
+        $this->assertNull(
+            SchoolAccessService::resolveDatabaseName('demo', '', '', 'default_db', 2),
+            'Several schools without a map or prefix must fail closed, never share the default database.'
+        );
+    }
+
+    public function testDatabaseResolutionRejectsUnsafeInput(): void
+    {
+        $this->assertNull(SchoolAccessService::resolveDatabaseName('bad-code', '', 'zi_', 'default_db', 1));
+        $this->assertNull(SchoolAccessService::resolveDatabaseName('demo', 'demo=bad-name', '', '', 1));
+        $this->assertNull(SchoolAccessService::resolveDatabaseName('demo', '', 'bad-prefix', '', 1));
+    }
+
+    public function testConnectionFailsClosedWhenSeveralSchoolsHaveNoDatabaseName(): void
+    {
+        $first  = $this->makeSchool();
+        $this->makeSchool('Second Isolation School', 'ISOTEST2');
+
+        $oldMap    = $_ENV['ZEE_SCHOOL_DB_MAP'] ?? null;
+        $oldPrefix = $_ENV['ZEE_SCHOOL_DB_PREFIX'] ?? null;
+
+        putenv('ZEE_SCHOOL_DB_MAP=');
+        putenv('ZEE_SCHOOL_DB_PREFIX=');
+        $_ENV['ZEE_SCHOOL_DB_MAP']    = '';
+        $_ENV['ZEE_SCHOOL_DB_PREFIX'] = '';
+
+        try {
+            $access = new SchoolAccessService();
+
+            $this->assertNull(
+                $access->databaseNameForSchool($first),
+                'With two schools and no mapping, no database name may be inferred.'
+            );
+            $this->assertNull(
+                $access->connectionForSchoolId($first),
+                'A school without a resolvable database must not fall back to another tenant database.'
+            );
+        } finally {
+            if ($oldMap === null) {
+                putenv('ZEE_SCHOOL_DB_MAP');
+                unset($_ENV['ZEE_SCHOOL_DB_MAP']);
+            } else {
+                putenv('ZEE_SCHOOL_DB_MAP=' . $oldMap);
+                $_ENV['ZEE_SCHOOL_DB_MAP'] = $oldMap;
+            }
+
+            if ($oldPrefix === null) {
+                putenv('ZEE_SCHOOL_DB_PREFIX');
+                unset($_ENV['ZEE_SCHOOL_DB_PREFIX']);
+            } else {
+                putenv('ZEE_SCHOOL_DB_PREFIX=' . $oldPrefix);
+                $_ENV['ZEE_SCHOOL_DB_PREFIX'] = $oldPrefix;
+            }
+        }
+    }
+
+    public function testConnectionUsesProvisioningPrefixForTheSchoolCode(): void
+    {
+        $id = $this->makeSchool();
+
+        $oldPrefix = $_ENV['ZEE_SCHOOL_DB_PREFIX'] ?? null;
+
+        putenv('ZEE_SCHOOL_DB_MAP=');
+        putenv('ZEE_SCHOOL_DB_PREFIX=iso_prefix_');
+        $_ENV['ZEE_SCHOOL_DB_MAP']    = '';
+        $_ENV['ZEE_SCHOOL_DB_PREFIX'] = 'iso_prefix_';
+
+        try {
+            $this->assertSame(
+                'iso_prefix_isotest',
+                (new SchoolAccessService())->databaseNameForSchool($id)
+            );
+        } finally {
+            if ($oldPrefix === null) {
+                putenv('ZEE_SCHOOL_DB_PREFIX');
+                unset($_ENV['ZEE_SCHOOL_DB_PREFIX']);
+            } else {
+                putenv('ZEE_SCHOOL_DB_PREFIX=' . $oldPrefix);
+                $_ENV['ZEE_SCHOOL_DB_PREFIX'] = $oldPrefix;
+            }
         }
     }
 }
