@@ -33,6 +33,8 @@ The product works and passes all automated checks, but release gates prevent a f
 - Security hardening: **39/39** runtime security checks
 - Package rebuild: multiple builds with verified integrity
 - LB-2 / LB-4 fixed and regression-pinned (see "Defect Fixes" below)
+- Live staging smoke on build 12 (2026-10-23): install, provisioning, isolation, 5 role landings, attendance/fee writes, licence 402 + read-only, billing invoice/pay/void, school + platform exports/prints, missing-CSRF 403, inactive-session refusal, PWA — see `REMAINING_TASKS.md`
+- Backup/restore drill (2026-10-23): both DBs dumped and restored into scratch DBs, 0 row-count diffs and 0 checksum diffs (23 control + 22 school tables); G9 owner RPO/RTO sign-off still open
 
 ### ❌ Remaining Blockers (Final Release Gates)
 
@@ -47,7 +49,7 @@ The product works and passes all automated checks, but release gates prevent a f
 - **G6** Authentication & server-side authorization: ✅ GO (live role matrix executed)
 - **G7** Tenant isolation: ❌ NO-GO (school-B-dependent rows blocked on host DB grant)
 - **G8** License expiry data access: ✅ GO (T-25..T-27 executed live)
-- **G9** Backup + restore drill: ❌ NO-GO (owner RPO/RTO sign-off open)
+- **G9** Backup + restore drill: ❌ NO-GO (local drill passed 2026-10-23, 0 diffs; owner RPO/RTO/retention sign-off still open)
 - **G10** Owner decisions: ❌ NO-GO (SSH rotation, etc.)
 
 ---
@@ -123,6 +125,7 @@ scratch MySQL database and drops it afterwards.
 - Tests: backend `220/958`, frontend `816/816` (green with global CSRF filter)
 
 ### Build History Highlights
+- Staging smoke (2026-10-23): build 12 installed and exercised end to end — provisioning, isolation, 5 role landings, attendance/fee writes, licence 402 + read-only, billing invoice/pay/void, export, print, PWA
 - Build 12 (2026-10-22): LB-2/LB-4 write fixes, real platform + school data, exports/print, CSRF token route
 - Build 11 (2026-10-21): JSON role denials, route-group tightening, registration closed
 - Build 10 (2026-10-21): root-route redirect-loop fix (LB-1), live Hostinger smoke
@@ -237,7 +240,7 @@ npm run check
 ## 🚨 Key Warnings & Limitations
 
 1. **No Git tag** — pre-release tag `v0.1.0-pre` exists but product not tagged
-2. **No role smoke tests** — no approved accounts; role-restricted access unverified
+2. **Role smoke tests done on staging only** (2026-10-23) — buyer accounts still to be provisioned and signed off
 3. **Exposed SSH password** — still needs owner rotation
 4. **CSRF verification** active globally (login CSRF enforced)
 5. **No CSP header** (SC-6 open, needs per-view nonces)
@@ -249,10 +252,10 @@ npm run check
 ## 📌 Next 6 Exact Actions
 
 1. Rotate SSH password — repo owner — proof: old password rejected
-2. Deploy rebuilt ZIP to **staging** database (not production) — ops — proof: migrations complete
-3. Re-run isolation check after those migrations — ops — proof: table counts
-4. Run smoke checklist from `release/RELEASE_NOTES_v0.1.0.md` — QA — proof: endpoint responses
-5. Create 5 role accounts + run role smoke tests — QA — proof: test log; only then may FINAL_RELEASE_STATUS → GO
+2. ~~Deploy rebuilt ZIP to **staging** database (not production)~~ — **Done 2026-10-23** — migrations complete (18)
+3. ~~Re-run isolation check after those migrations~~ — **Done 2026-10-23** — 23/22 tables, 0 leaks
+4. ~~Run smoke checklist from `release/RELEASE_NOTES_v0.1.0.md`~~ — **Done 2026-10-23** — endpoint responses recorded in `REMAINING_TASKS.md`
+5. ~~Create 5 role accounts + run role smoke tests~~ — **Done 2026-10-23** — 5/5 land on approved surfaces
 6. Owner sign-off on backup RPO/RTO + brand/legal clearance — repo owner — proof: written decision
 
 ---
@@ -262,7 +265,7 @@ npm run check
 | Gate | Status | Evidence |
 |------|--------|----------|
 | G1, G2, G3, G4, G5, G6, G8 | ✅ GO | Automated, security, package, authz evidence |
-| G3b, G7, G9, G10 | ❌ NO-GO | Pixel regression, isolation, owner decisions, live smoke |
+| G3b, G7, G9, G10 | ❌ NO-GO | Pixel regression, school-B isolation, backup sign-off, owner decisions |
 
 **Overall: NO-GO for pilot.** G1–G5, G8 are GO; remaining gates fail their evidence bar.
 

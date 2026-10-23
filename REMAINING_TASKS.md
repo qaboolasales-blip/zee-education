@@ -9,7 +9,7 @@ out of the project root into `archive/` (reference only). Files that the build
 script, the test suites, or the running app require stay at their original
 paths — see the table in `SUMMARY.md` § Documentation Inventory.
 
-## Open Release Gates — Still NO-GO (as of 2026-10-22)
+## Open Release Gates — Still NO-GO (as of 2026-10-23)
 
 | Gate | Task / Blocker | Owner |
 |------|----------------|-------|
@@ -27,11 +27,70 @@ paths — see the table in `SUMMARY.md` § Documentation Inventory.
 
 ## AI / Ops Remaining Tasks
 
-1. Deploy rebuilt ZIP to staging DB (not production) and run full live smoke.
-2. Run smoke checklist from `release/RELEASE_NOTES_v0.1.0.md` — invoice issue/pay/void, missing-CSRF 403, PWA install.
+1. ~~Deploy rebuilt ZIP to staging DB (not production) and run full live smoke.~~
+   **Done 2026-10-23** — see "Live Staging Smoke" below.
+2. ~~Run smoke checklist from `release/RELEASE_NOTES_v0.1.0.md` — invoice issue/pay/void,
+   missing-CSRF 403, PWA install.~~ **Done 2026-10-23** — billing lifecycle, licence
+   402/read-only, missing-CSRF 403, `manifest.json` + `sw.js` all exercised.
 3. Re-run the G7 school-B-dependent isolation rows after the host DB grant.
-4. Create owner-approved role accounts + run role smoke tests (5 roles).
+4. ~~Create owner-approved role accounts + run role smoke tests (5 roles).~~
+   **Done 2026-10-23** — 5 roles signed in and landed on their approved surface.
 5. Move final release status: `FINAL_RELEASE_STATUS` → GO only after all gates pass.
+
+## Live Staging Smoke — 2026-10-23
+
+Environment: extracted build-12 ZIP at
+`C:\laragon\www\zee_staging\Zee_Education_v0.1.0`, Laragon PHP 8.3.30, MySQL 8.4,
+control plane `zee_stage_control` + school DB `zi_stage_demo`, served by
+`php spark serve` on `http://127.0.0.1:8899` (development env, offline).
+
+| Check | Result |
+|-------|--------|
+| Install / migrations (18, three namespaces) | OK, installer locked |
+| School provisioning — school 1 `demo` | `201 {state:"completed"}`, `installation_state=completed` |
+| Tenant isolation | 23 control-plane / 22 school tables, 0 cross-leaks |
+| Super Admin login + `/portal` | 200, portal dashboard |
+| Attendance write (LB-2) | 200; row carries `academic_session_id=1`, `class_id=1`, `section_id=1`, `recorded_by=2` |
+| Fee invoice + receipts (LB-4) | 200; `due_date` defaulted +30d; 2000 cash + 3000 bank → `paid` |
+| Licence gate — revoke | write `402`, read still `200` (data safe, read-only) |
+| Licence gate — paid renewal | invoice 201 (`ZEE-INV-2026-0001`, PKR 30000) → pay settled + renewed new key → write 200 |
+| Billing void | 200, invoice `void` |
+| School exports — students / fees / attendance | 200 `text/csv`, real rows (`ADM-STG-001`) |
+| School print — admission, result-card, fee-receipt, teacher, id-card | 200 HTML, school name in title, student data in id-card |
+| Platform exports — schools / tickets / ratebook / renewals | 200 `text/csv`, real headers + rows |
+| Platform print — admission, teacher, id-card, result-card | 200 HTML; unknown template 404 |
+| Platform records — tickets, ratebook, settings, reminders, quotes, installations, template-requests | 200 `{ok:true}` |
+| Role landings — superadmin / school_admin / teacher | 200 → `/portal`, `/school`, `/school` |
+| Role landings — parent / student | 200 → `/setup` (approved placeholder per `Home::index`) |
+| `/m` mobile shell (school_admin) | 200, "Mobile App" shell + manifest link |
+| Write without CSRF — billing API | 403 `{ok:false,error:"csrf_required"} (documented contract) |
+| Write without CSRF — school API / token-less login | 403 (global `csrf` filter) |
+| Write with no active academic session | `200 {ok:false,"No active academic session…"}`, **0 rows written** |
+| Same write after session restored | 200 `{ok:true}` |
+| PWA `manifest.json` + `sw.js` | 200 |
+| Audit trail | 6 platform events (issue, revoke, invoice×2, payment, void), actor `super_admin` |
+
+This closes the AI/ops smoke items.
+
+### Backup / restore drill — G9 evidence (2026-10-23, local)
+
+| Step | Result |
+|------|--------|
+| `mysqldump` control plane | 47.7 KB, 0.56 s (with the school dump) |
+| `mysqldump` school DB | 31.5 KB |
+| Restore into scratch DBs | 4.04 s |
+| Schema restored | 23 control + 22 school tables |
+| Row counts (23 + 22 tables) | 130 control / 25 school, **0 diffs** vs live |
+| `CHECKSUM TABLE` (all tables) | **0 diffs** vs live |
+| Cleanup | scratch DBs dropped, dumps deleted |
+
+Caveat for the owner: this proves the dump → restore → verify procedure on a
+small local dataset (135 rows). It is not a production-sized timing or a
+Hostinger storage/retention test, so **G9 still needs the owner's RPO/RTO/
+retention sign-off**.
+
+**G3b** (pixel regression) and **G7** (school-B isolation rows) are untouched
+by this run and remain NO-GO.
 
 ## Closed Since 2026-10-21
 
