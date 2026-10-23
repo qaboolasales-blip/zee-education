@@ -14,7 +14,7 @@ paths — see the table in `SUMMARY.md` § Documentation Inventory.
 | Gate | Task / Blocker | Owner |
 |------|----------------|-------|
 | G3b | UI pixel regression after data binding — never executed | Owner |
-| G7 | Tenant isolation rows T-1, T-3, T-5, T-8..T-12 — school-B DB grant pending (host action) | Owner/Host |
+| G7 | Local isolation rows executed on 2026-10-23 (single school + two-school A/B, 0 leaks). Remaining: rows T-1, T-3, T-5, T-8..T-12 on the **production** school-B DB grant (host action) | Owner/Host |
 | G9 | Backup/restore drill owner sign-off (RPO/RTO/retention) | Owner |
 | G10 | Owner decisions — SSH rotation, RPO/RTO, Node pin, pixel-gate redefinition, brand/legal | Owner |
 
@@ -48,7 +48,9 @@ control plane `zee_stage_control` + school DB `zi_stage_demo`, served by
 |-------|--------|
 | Install / migrations (18, three namespaces) | OK, installer locked |
 | School provisioning — school 1 `demo` | `201 {state:"completed"}`, `installation_state=completed` |
-| Tenant isolation | 23 control-plane / 22 school tables, 0 cross-leaks |
+| Tenant isolation — single school | 23 control-plane / 22 school tables, 0 cross-leaks |
+| **Two-school isolation (LB-5 retest)** | School A admin sees only Ali (`ADM-STG-001`, 1 student, invoice `paid_total=5000`); school B admin sees only Bilal (`ADM-STG-B01`, 1 student, 0 invoices) |
+| **Two-school write routing (LB-5 retest)** | B attendance write 200, row lands in `zi_stage_stagingb` with `recorded_by=6`; school A's attendance count unchanged |
 | Super Admin login + `/portal` | 200, portal dashboard |
 | Attendance write (LB-2) | 200; row carries `academic_session_id=1`, `class_id=1`, `section_id=1`, `recorded_by=2` |
 | Fee invoice + receipts (LB-4) | 200; `due_date` defaulted +30d; 2000 cash + 3000 bank → `paid` |
@@ -89,8 +91,21 @@ small local dataset (135 rows). It is not a production-sized timing or a
 Hostinger storage/retention test, so **G9 still needs the owner's RPO/RTO/
 retention sign-off**.
 
-**G3b** (pixel regression) and **G7** (school-B isolation rows) are untouched
-by this run and remain NO-GO.
+**G3b** (pixel regression) is untouched by this run and remains NO-GO. **G7**
+now has both live isolation rows executed locally (single school and the
+two-school A/B retest above); the remaining G7 item is the *production* school-B
+host DB grant, which needs the owner/host action listed in the gate table.
+
+### LB-5 — cross-tenant database fallback (found live, fixed in build 13)
+
+| Item | Detail |
+|------|--------|
+| Symptom | School B's admin (`b_admin`, school 2) read school A's student `ADM-STG-001` and A's attendance; a B write would have been recorded against A's database |
+| Root cause | `SchoolAccessService::connectionForSchoolId()` fell back to `schooldb.default.database` whenever `ZEE_SCHOOL_DB_MAP` was empty, while provisioning created `ZEE_SCHOOL_DB_PREFIX + school_code` databases — multi-school installs resolved every school to school A |
+| Fix | New `databaseNameForSchool()` + static `resolveDatabaseName()`: explicit map → `<prefix><code>` → default **only for a single-school install**; otherwise `null` (fail closed) with an error log. `connectionForSchoolId()` returns `null` instead of guessing |
+| Read contract | `SchoolApi::students()` / `invoices()` now use `insight()`: an unresolved/no-DB school answers `200` with empty lists, never `403` and never another tenant's rows |
+| Regression pin | `TenantIsolationTest` +6 tests (map wins, prefix fallback, default only for one school, unsafe input rejected, fail-closed with two schools, prefix from code) — file 20/20 |
+| Verification | Backend **226 tests / 968 assertions** green; live two-school retest rows above |
 
 ## Closed Since 2026-10-21
 
@@ -98,8 +113,9 @@ by this run and remain NO-GO.
 |------|-----|-----|-------|
 | LB-2 | `POST /api/school/attendance` → 500 (NOT NULL academic-structure columns omitted) | Fixed — session/class/section/actor resolved from the school's own data | `SchoolRecordWriteTest` (5 attendance tests) against the real shipped school schema |
 | LB-4 | `POST /api/school/fees/invoices` → 500 (NOT NULL session + due date; status outside the ENUM) | Fixed — session resolved, due date defaults +30 days, status `due`/`partial`/`paid` | `SchoolRecordWriteTest` (4 fee tests) against the real shipped school schema |
+| **LB-5** | Multi-school install resolved every school to the default (school A) database when `ZEE_SCHOOL_DB_MAP` was empty | Fixed — same map/prefix rule as provisioning; **fails closed** for multi-school installs, empty read for unresolved school | `TenantIsolationTest` +6 tests (20/20); live A/B retest on build 12 with patched files |
 | Scratch files in the package | 4 leftover `.tmp` view fragments would have shipped to buyers (the builder copies the whole `app/` tree) | Deleted; `*.tmp`/`*.bak`/`*.orig` git-ignored; the package verifier now fails on any scratch file | Package rebuild: 0 scratch files, verifier 35/35 |
-| Backend suite | Could not run locally — MySQL service was down (148 connection errors) | MySQL started; suite green | `OK (220 tests, 958 assertions)`; frontend `816/816` |
+| Backend suite | Could not run locally — MySQL service was down (148 connection errors) | MySQL started; suite green | `OK (226 tests, 968 assertions)`; frontend `816/816` |
 
 ## Pending Batch Microtasks
 
@@ -109,5 +125,7 @@ by this run and remain NO-GO.
 ## Defects Still Open
 
 - None in the write-path family. The previously open LB-2 and LB-4 are fixed
-  and regression-pinned (see "Closed Since 2026-10-21").
+  and regression-pinned, and **LB-5** (cross-tenant DB fallback, found during the
+  2026-10-23 live smoke) is fixed in build 13 with six regression tests (see
+  "Closed Since 2026-10-21").
 - G3b (pixel regression) is unproven, not defective: it has never been executed.

@@ -1,9 +1,9 @@
 # Zee Education v0.1.0 — Release Notes
 
-**Build date:** 2026-10-22 (build 12; rebuilds build 10 of 2026-10-21, build 9 of 2026-10-21, builds 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
+**Build date:** 2026-10-23 (build 13; rebuilds build 12 of 2026-10-22, build 10 of 2026-10-21, build 9 of 2026-10-21, builds 8/7/6 of 2026-10-20, build 5 of 2026-10-20, build 4 of 2026-10-20, build 3 of 2026-10-20, build 2 of 2026-10-19 and build 1 of 2026-10-18)
 **Package:** `Zee_Education_v0.1.0_Hostinger_Installer.zip`
-**Commit:** `6b5d8f60a3780742067a682e56814cbd06606665` (3 commits past tag `v0.1.0-pre`, which still points at build 9's `b1267df…`; manifest records `git_tag: null`)
-**SHA-256:** `863517700968f9832c78808f3858eab2d40a0cdf2fbb8a74d0047796982d96b7`
+**Commit:** `19df717e5722a1bbe1d351d400b9881c62c581d1` (packaged commit, 14 commits past tag `v0.1.0-pre` at `8ef4d7c`; manifest records `git_tag: null`)
+**SHA-256:** `5d098348163a2ca2390261f40489ef8affa69724a535c6bf23a88c158290ba3c`
 (verify with `sha256sum` against `SHA256SUMS.txt`, then run `php tools/verify-package.php`)
 **Release type:** PRE-RELEASE — tagged **`v0.1.0-pre`** (pre-release tag, not a stable release)
 **Installation mode:** Platform Owner / Super Admin control plane
@@ -149,7 +149,7 @@ features were added. Full reasoning: `PACKAGING_DECISIONS.md` §9.
 *and* byte-identical extraction (1,317 files); reference UI hashes 3/3 unchanged; no real
 `.env`, no private keys, no hosting account id, no pilot test data anywhere in the package;
 no scratch working file in the package (the verifier now fails on any `.tmp`/`.bak`/`.orig`);
-backend tests **220 tests / 958 assertions / 0 skipped / 0 failures** (green with the global
+backend tests **226 tests / 968 assertions / 0 skipped / 0 failures** (green with the global
 CSRF filter enabled; 179 tests / 715 assertions before build 12); frontend **816/816**; a
 39-check live runtime security matrix passed (incl. session-fixation checks SF-01/SF-02 and
 the global-CSRF polarity checks `I1`/`I2`/`I3`; repo-only evidence: `quality/docs/security-runtime-review.md`).
@@ -188,6 +188,30 @@ schema in a scratch database and drops that database afterwards.
   to read that token — every write was refused with no path to success. The
   route is signed-in only, unreadable cross-origin, and a GET is never
   CSRF-checked, so reading a token cannot rotate it.
+
+---
+
+**Fixed in build 13 (security/correctness — found during the live staging smoke):**
+
+- **A second school could read the first school's database.** On a multi-school
+  install, a school's database was resolved to `schooldb.default.database`
+  whenever `ZEE_SCHOOL_DB_MAP` was empty, although provisioning had created
+  `<prefix><school_code>` databases. The second school's staff therefore saw the
+  first school's students, fees and attendance, and a write was recorded against
+  the wrong tenant.
+- Resolution now follows the same rule as provisioning — explicit map first,
+  then `<prefix><school_code>` — and **fails closed**: with more than one school,
+  an unresolved database name is refused and logged instead of falling back to a
+  default. A read for an unresolved school returns an empty workspace, never
+  another tenant's rows. The single-school default fallback is unchanged.
+- Pinned by six new tests in `TenantIsolationTest` (20 in that file): map wins,
+  prefix fallback, default only for a single-school install, unsafe input
+  refused, fail-closed with two schools, and the prefix derived from the code.
+- Verified live against two provisioned schools: each admin saw only its own
+  student and its own attendance row; school B's write carried B's user id in
+  B's database, and school A's counts were unchanged.
+- No data migration is needed; the change only affects how the connection is
+  selected.
 
 ---
 

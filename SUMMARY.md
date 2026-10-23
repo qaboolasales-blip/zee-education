@@ -27,13 +27,14 @@ This consolidated summary captures the current state, key findings, and remainin
 The product works and passes all automated checks, but release gates prevent a finished product.
 
 ### ✅ Verified Completed
-- Automated test suites: backend **220/958** / frontend **816/816**
+- Automated test suites: backend **226/968** / frontend **816/816**
 - Package verification: **35/35** checks clean
 - UI lock: **3/3** reference files unchanged
 - Security hardening: **39/39** runtime security checks
 - Package rebuild: multiple builds with verified integrity
-- LB-2 / LB-4 fixed and regression-pinned (see "Defect Fixes" below)
+- LB-2 / LB-4 fixed and regression-pinned; **LB-5** (cross-tenant DB fallback) found live and fixed in build 13 (see "Defect Fixes" below)
 - Live staging smoke on build 12 (2026-10-23): install, provisioning, isolation, 5 role landings, attendance/fee writes, licence 402 + read-only, billing invoice/pay/void, school + platform exports/prints, missing-CSRF 403, inactive-session refusal, PWA — see `REMAINING_TASKS.md`
+- Two-school isolation verified live (2026-10-23): school A sees only Ali, school B sees only Bilal; B's write lands in B's DB and A's counts stay unchanged
 - Backup/restore drill (2026-10-23): both DBs dumped and restored into scratch DBs, 0 row-count diffs and 0 checksum diffs (23 control + 22 school tables); G9 owner RPO/RTO sign-off still open
 
 ### ❌ Remaining Blockers (Final Release Gates)
@@ -47,7 +48,7 @@ The product works and passes all automated checks, but release gates prevent a f
 
 #### G6-G10: Security & Data / Owner
 - **G6** Authentication & server-side authorization: ✅ GO (live role matrix executed)
-- **G7** Tenant isolation: ❌ NO-GO (school-B-dependent rows blocked on host DB grant)
+- **G7** Tenant isolation: ❌ NO-GO (local A/B rows executed clean; **production** school-B host DB grant still pending)
 - **G8** License expiry data access: ✅ GO (T-25..T-27 executed live)
 - **G9** Backup + restore drill: ❌ NO-GO (local drill passed 2026-10-23, 0 diffs; owner RPO/RTO/retention sign-off still open)
 - **G10** Owner decisions: ❌ NO-GO (SSH rotation, etc.)
@@ -56,12 +57,13 @@ The product works and passes all automated checks, but release gates prevent a f
 
 ## 🔑 Critical Resolved Issues
 
-### Defect Fixes — LB-2 and LB-4 (2026-10-22)
+### Defect Fixes — LB-2, LB-4 and LB-5
 
 | Defect | Symptom | Root cause | Fix | Proof |
 |--------|---------|------------|-----|-------|
 | **LB-2** | `POST /api/school/attendance` → 500 | NOT NULL columns omitted: `academic_session_id`, `class_id`, `section_id`, `recorded_by` | Session resolved from the school's active session, class/section from the student's current enrolment, actor from the signed-in session | `SchoolRecordWriteTest` — 5 attendance tests against the real shipped schema |
 | **LB-4** | `POST /api/school/fees/invoices` → 500 | NOT NULL `academic_session_id` + `due_date` omitted; status outside the `due/partial/paid/overdue` ENUM | Session resolved from the school's active session, due date defaults to +30 days, status `due`/`partial`/`paid` | `SchoolRecordWriteTest` — 4 fee tests against the real shipped schema |
+| **LB-5** | School B's admin could read school A's students/attendance; B writes targeted A's DB | `connectionForSchoolId()` fell back to `schooldb.default.database` when `ZEE_SCHOOL_DB_MAP` was empty, while provisioning used `<prefix><code>` | Map → `<prefix><code>` → default **only for a single-school install**; otherwise fail closed (`null` + log). Empty read for unresolved school | `TenantIsolationTest` +6 tests (20/20); live two-school A/B retest: A=1 student/paid 5000, B=1 student/0 invoices, B write `recorded_by=6` in B's DB |
 
 The old suite never caught either defect: it asserted that the migration and
 contract **files** exist, not that a write **succeeds**. `SchoolRecordWriteTest`
@@ -115,16 +117,18 @@ scratch MySQL database and drops it afterwards.
 
 ## 📦 Package & Builds
 
-### Latest Build (build 12, 2026-10-22)
+### Latest Build (build 13, 2026-10-23)
+- **Security/correctness:** cross-tenant school-database fallback fixed (LB-5) — resolution matches provisioning (map → `<prefix><code>`), fails closed for multi-school installs; an unresolved school reads an empty workspace
 - Working dashboards: Super Admin platform records (tickets, settings, rate book, reminders, quotes, installation health, template requests) and the school dashboard (overview, attendance register/trend, fee totals/receipts, marks, timetable, homework, notices) read and write real data
 - Real exports + print documents for both planes (`/api/school/export|print/*`, `/api/admin/export|print/*`)
 - `GET /api/csrf` — signed-in clients can now read their own CSRF token (every write was previously unanswerable)
 - LB-2 + LB-4 fixed (attendance / fee-invoice writes returned 500) and regression-pinned
-- Package SHA256: `863517700968f9832c78808f3858eab2d40a0cdf2fbb8a74d0047796982d96b7` (1317 files, built from commit `6b5d8f6`)
+- Package SHA256: `5d098348163a2ca2390261f40489ef8affa69724a535c6bf23a88c158290ba3c` (1317 files, built from commit `19df717`)
 - Verification: build-package.ps1 **35/0**, `SHA256SUMS.txt` matches, 0 scratch files in the package
-- Tests: backend `220/958`, frontend `816/816` (green with global CSRF filter)
+- Tests: backend `226/968`, frontend `816/816` (green with global CSRF filter)
 
 ### Build History Highlights
+- Build 13 (2026-10-23): LB-5 cross-tenant DB fallback fixed + 6 regression tests, two-school live A/B verified
 - Staging smoke (2026-10-23): build 12 installed and exercised end to end — provisioning, isolation, 5 role landings, attendance/fee writes, licence 402 + read-only, billing invoice/pay/void, export, print, PWA
 - Build 12 (2026-10-22): LB-2/LB-4 write fixes, real platform + school data, exports/print, CSRF token route
 - Build 11 (2026-10-21): JSON role denials, route-group tightening, registration closed
@@ -231,7 +235,7 @@ npm run check
 ```
 
 ### Test Coverage
-- **Backend:** 220 tests / 958 assertions (0 failures)
+- **Backend:** 226 tests / 968 assertions (0 failures)
 - **Frontend:** 816 tests / 0 failures
 - **Security runtime:** 39 checks / 0 failures
 
@@ -265,7 +269,7 @@ npm run check
 | Gate | Status | Evidence |
 |------|--------|----------|
 | G1, G2, G3, G4, G5, G6, G8 | ✅ GO | Automated, security, package, authz evidence |
-| G3b, G7, G9, G10 | ❌ NO-GO | Pixel regression, school-B isolation, backup sign-off, owner decisions |
+| G3b, G7, G9, G10 | ❌ NO-GO | Pixel regression; production school-B grant (local A/B rows clean); backup sign-off; owner decisions |
 
 **Overall: NO-GO for pilot.** G1–G5, G8 are GO; remaining gates fail their evidence bar.
 
@@ -280,6 +284,7 @@ npm run check
 - **2026-10-21:** Build 10 deployed live; role matrix (G6) executed; G7 partial live
 - **2026-10-21:** **BLOCKER:** owner approvals needed (role accounts, backup RPO/RTO, SSH rotation)
 - **2026-10-22:** Build 12 — LB-2/LB-4 write fixes + regression pin, real platform/school data, exports + print, CSRF token route; docs consolidated into `archive/`, `SUMMARY.md` + `REMAINING_TASKS.md` kept at the root
+- **2026-10-23:** Live staging smoke on build 12; two-school A/B test exposed LB-5 (cross-tenant DB fallback) → fixed, 6 regression tests, backend **226/968**; build 13 packaged (`5d09834`)
 
 ---
 
